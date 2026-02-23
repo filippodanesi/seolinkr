@@ -168,24 +168,26 @@ with tab_process:
     )
 
     sitemap_names = list(sitemaps.keys())
-    selected_sitemaps = st.multiselect(
-        "Select sitemaps",
-        options=sitemap_names,
-        default=sitemap_names[:1] if sitemap_names else [],
-        key="process_sitemaps",
-    )
+    with st.form("process_form"):
+        selected_sitemaps = st.multiselect(
+            "Select sitemaps",
+            options=sitemap_names,
+            default=sitemap_names[:1] if sitemap_names else [],
+        )
 
-    extra_sitemap = st.text_input("Or paste a sitemap URL", key="process_extra_sitemap")
+        extra_sitemap = st.text_input("Or paste a sitemap URL")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        gsc_options = ["(none)"] + gsc_properties
-        gsc_site_idx = st.selectbox("GSC property (optional)", options=gsc_options, index=0, key="process_gsc_site")
-        gsc_site = gsc_site_idx if gsc_site_idx != "(none)" else ""
-    with col2:
-        current_url = st.text_input("Current page URL (optional)", key="process_current_url", placeholder="https://...")
+        col1, col2 = st.columns(2)
+        with col1:
+            gsc_options = ["(none)"] + gsc_properties
+            gsc_site_idx = st.selectbox("GSC property (optional)", options=gsc_options, index=0)
+            gsc_site = gsc_site_idx if gsc_site_idx != "(none)" else ""
+        with col2:
+            current_url = st.text_input("Current page URL (optional)", placeholder="https://...")
 
-    if st.button("Run Pipeline", type="primary", key="process_run"):
+        submitted = st.form_submit_button("Run Pipeline", type="primary")
+
+    if submitted:
         if not uploaded:
             st.error("Please upload a file.")
         else:
@@ -258,14 +260,15 @@ with tab_candidates:
         key="candidates_upload",
     )
 
-    selected_sitemaps_c = st.multiselect(
-        "Select sitemaps",
-        options=sitemap_names,
-        default=sitemap_names[:1] if sitemap_names else [],
-        key="candidates_sitemaps",
-    )
+    with st.form("candidates_form"):
+        selected_sitemaps_c = st.multiselect(
+            "Select sitemaps",
+            options=sitemap_names,
+            default=sitemap_names[:1] if sitemap_names else [],
+        )
+        submitted_c = st.form_submit_button("Find Candidates", type="primary")
 
-    if st.button("Find Candidates", type="primary", key="candidates_run"):
+    if submitted_c:
         if not uploaded_c:
             st.error("Please upload a file.")
         elif not selected_sitemaps_c:
@@ -325,9 +328,12 @@ with tab_audit:
         type=["md", "markdown"],
         key="audit_upload",
     )
-    audit_domain = st.text_input("Expected domain (optional)", key="audit_domain", placeholder="www.example.com")
 
-    if st.button("Run Audit", type="primary", key="audit_run"):
+    with st.form("audit_form"):
+        audit_domain = st.text_input("Expected domain (optional)", placeholder="www.example.com")
+        submitted_a = st.form_submit_button("Run Audit", type="primary")
+
+    if submitted_a:
         if not uploaded_a:
             st.error("Please upload a markdown file.")
         else:

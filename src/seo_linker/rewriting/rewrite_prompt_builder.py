@@ -122,7 +122,8 @@ _SHARED_RULES = """\
 ## Output rules
 
 1. **Output ONLY the rewritten markdown content.** No preamble, no explanation, \
-no "Here is the rewritten article:" — just the content itself.
+no analysis, no "Here is the rewritten article:" — start IMMEDIATELY with the first \
+heading or paragraph of the article. The very first line of your response must be content.
 2. **Do NOT insert any links.** No markdown links, no URLs in the text. Links will \
 be added in a separate step.
 3. **Maintain the original language.** If the input is in German, write in German. \

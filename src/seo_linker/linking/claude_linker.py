@@ -144,6 +144,21 @@ def _call_claude(api_key: str, model: str, user_prompt: str, system_prompt: str)
     return message.content[0].text
 
 
+def _strip_preamble(text: str) -> str:
+    """Remove any analysis/reasoning preamble before the actual content.
+
+    Claude sometimes prepends reasoning text before the markdown content.
+    We detect this by finding the first markdown heading (line starting with #)
+    and stripping everything before it.
+    """
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if line.strip().startswith("#"):
+            return "\n".join(lines[i:])
+    # No heading found — return as-is
+    return text
+
+
 def _parse_response(response: str) -> tuple[str, list[LinkInsertion]]:
     """Parse Claude's response into linked text and insertion report."""
     if REPORT_SEPARATOR in response:
@@ -153,6 +168,9 @@ def _parse_response(response: str) -> tuple[str, list[LinkInsertion]]:
     else:
         linked_text = response.strip()
         report_text = ""
+
+    # Strip any reasoning preamble before the actual content
+    linked_text = _strip_preamble(linked_text)
 
     insertions: list[LinkInsertion] = []
     if report_text:

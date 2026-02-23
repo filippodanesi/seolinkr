@@ -88,7 +88,10 @@ semantic relevance alone (the existing behavior).
 
 Return TWO sections separated by the exact marker `---REPORT---`:
 
-1. **Modified content**: The full content with links inserted in markdown format.
+1. **Modified content**: The full content with links inserted in markdown format. \
+Start IMMEDIATELY with the content (the first line must be the first heading or \
+paragraph of the article). Do NOT include any analysis, reasoning, observations, \
+or preamble before the content.
 2. **JSON report**: A JSON array where each element has:
    - `anchor_text`: the linked text
    - `target_url`: the target URL

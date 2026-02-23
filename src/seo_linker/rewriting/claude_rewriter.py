@@ -51,6 +51,15 @@ def rewrite_content(
     return [ContentSection(text=rewritten, index=0)]
 
 
+def _strip_preamble(text: str) -> str:
+    """Remove any reasoning preamble before the first markdown heading."""
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if line.strip().startswith("#"):
+            return "\n".join(lines[i:])
+    return text
+
+
 def _rewrite_single(
     text: str,
     api_key: str,
@@ -58,7 +67,7 @@ def _rewrite_single(
     system_prompt: str,
 ) -> str:
     user_prompt = build_rewrite_user_prompt(text)
-    return _call_claude(api_key, model, user_prompt, system_prompt)
+    return _strip_preamble(_call_claude(api_key, model, user_prompt, system_prompt))
 
 
 def _rewrite_chunked(
@@ -79,7 +88,7 @@ def _rewrite_chunked(
             chunk,
             previous_headings=previous_headings if previous_headings else None,
         )
-        result = _call_claude(api_key, model, user_prompt, system_prompt)
+        result = _strip_preamble(_call_claude(api_key, model, user_prompt, system_prompt))
         rewritten_chunks.append(result)
 
         # Extract headings from this chunk for inter-chunk context

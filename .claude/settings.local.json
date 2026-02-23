@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(python3 -m py_compile:*)",
+      "Bash(pip3 install:*)",
+      "Bash(seo-linker --version:*)",
+      "Bash(seo-linker:*)"
+    ]
+  }
+}

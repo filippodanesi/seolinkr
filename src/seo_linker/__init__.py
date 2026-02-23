@@ -1,0 +1,1 @@
+"""SEO Internal Linking Tool."""

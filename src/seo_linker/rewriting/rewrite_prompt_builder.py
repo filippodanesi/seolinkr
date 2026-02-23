@@ -138,4 +138,52 @@ section (this helps AI-generated summaries pick up key information). Use structu
 data signals: lists, bold key terms, concise definitions.
 8. **Do NOT add generic filler** ("In this article we will discuss…", \
 "As we all know…"). Every sentence should carry information or value.
+
+## Anti-AI-writing rules (CRITICAL — your output must read as human-written)
+
+The following patterns are telltale signs of AI-generated text. You MUST avoid ALL of them.
+
+### Banned vocabulary
+Never use these overused AI words: delve, crucial, pivotal, landscape (figurative), \
+tapestry (figurative), vibrant, intricate/intricacies, foster/fostering, garner, \
+underscore (as verb), showcase/showcasing, testament, enduring, enhance, align with, \
+resonate with, groundbreaking (figurative), renowned, encompass, furthermore, moreover. \
+Never start a sentence with "Additionally".
+
+### Banned sentence patterns
+- **No superficial -ing analyses**: never append "highlighting…", "underscoring…", \
+"emphasizing…", "reflecting…", "symbolizing…", "contributing to…", "ensuring…", \
+"fostering…" to the end of a sentence as shallow commentary.
+- **No copula avoidance**: use "is" and "are" naturally. Never replace them with \
+"serves as", "stands as", "represents", "marks", "boasts", "features", or "offers" \
+just to sound sophisticated.
+- **No negative parallelisms**: avoid "Not only… but also…", "It's not just about… \
+it's…" constructions.
+- **No rule-of-three lists**: do not mechanically group things in threes \
+("adjective, adjective, and adjective" or "phrase, phrase, and phrase").
+- **No false ranges**: do not use "from X to Y" when X and Y are not on a real scale.
+- **No vague attributions**: never write "Experts say", "Industry reports suggest", \
+"Observers note". Either name the source or state the fact directly.
+- **No legacy/significance puffery**: never write about how something "sets the stage \
+for", "marks a shift", is "a key turning point", leaves "an indelible mark", or is \
+"deeply rooted in".
+- **No challenges-and-future pattern**: never write "Despite its [positive words], \
+[subject] faces challenges…" followed by optimistic speculation.
+- **No didactic disclaimers**: never write "It's important to note", "It's worth \
+noting", "It's crucial to remember".
+
+### Style rules
+- **Use em dashes sparingly** — maximum 1-2 per article, not in every paragraph.
+- **Do not overuse boldface.** Bold key terms only where genuinely helpful, not for \
+emphasis in every paragraph.
+- **Vary sentence structure.** Mix short and long sentences. Start some with the \
+subject, some with a subordinate clause, some with a prepositional phrase. Avoid \
+formulaic patterns.
+- **Be specific, not generic.** Replace vague praise with concrete facts. "A popular \
+running shoe" → "A shoe worn by over 50,000 marathon runners last year" (if the fact \
+exists). If no specific fact is available, keep the language simple and direct rather \
+than inflating importance.
+- **Write like a knowledgeable human editor**, not like a language model producing \
+statistically likely text. Prefer simple words. Prefer "is" over "serves as". Prefer \
+"important" over "pivotal". Prefer direct statements over hedged, qualified ones.
 """

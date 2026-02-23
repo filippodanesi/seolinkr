@@ -253,27 +253,42 @@ with tab_process:
                     )
                     status.update(label="Pipeline completed!", state="complete")
 
-                    st.success(f"Inserted **{len(result.insertions)}** links")
-
-                    if result.rewritten_text:
-                        with st.expander("View rewritten content (before linking)"):
-                            st.markdown(result.rewritten_text)
-
-                    if result.insertions:
-                        st.markdown("**Link report:**")
-                        for ins in result.insertions:
-                            st.markdown(f"- [{ins.anchor_text}]({ins.target_url}) — {ins.reasoning}")
-
+                    # Store results in session_state so they persist across reruns
                     with open(output_path, "rb") as f:
-                        st.download_button(
-                            label=f"Download {output_path.name}",
-                            data=f.read(),
-                            file_name=f"{Path(uploaded.name).stem}_linked{suffix}",
-                            mime="application/octet-stream",
-                        )
+                        st.session_state["process_result"] = {
+                            "insertions": [
+                                {"anchor_text": ins.anchor_text, "target_url": ins.target_url, "reasoning": ins.reasoning}
+                                for ins in result.insertions
+                            ],
+                            "rewritten_text": result.rewritten_text,
+                            "file_data": f.read(),
+                            "file_name": f"{Path(uploaded.name).stem}_linked{suffix}",
+                        }
                 except PipelineError as e:
                     status.update(label="Pipeline failed", state="error")
                     st.error(str(e))
+
+    # Display results from session_state (persists across reruns)
+    if "process_result" in st.session_state:
+        pr = st.session_state["process_result"]
+
+        st.success(f"Inserted **{len(pr['insertions'])}** links")
+
+        if pr["rewritten_text"]:
+            with st.expander("View rewritten content (before linking)"):
+                st.markdown(pr["rewritten_text"])
+
+        if pr["insertions"]:
+            st.markdown("**Link report:**")
+            for ins in pr["insertions"]:
+                st.markdown(f"- [{ins['anchor_text']}]({ins['target_url']}) — {ins['reasoning']}")
+
+        st.download_button(
+            label=f"Download {pr['file_name']}",
+            data=pr["file_data"],
+            file_name=pr["file_name"],
+            mime="application/octet-stream",
+        )
 
 # ---- Tab 2: Candidates ---------------------------------------------------
 

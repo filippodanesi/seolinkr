@@ -49,6 +49,21 @@ def _get_gsc_client():
     return GSCClient(service_account_path=tmp.name)
 
 
+@st.cache_data(ttl=300)
+def _list_gsc_properties() -> list[str]:
+    """Fetch GSC properties available to the service account."""
+    client = _get_gsc_client()
+    if client is None:
+        return []
+    try:
+        response = client._service.sites().list().execute()
+        return sorted(
+            entry["siteUrl"] for entry in response.get("siteEntry", [])
+        )
+    except Exception:
+        return []
+
+
 def _save_upload(uploaded_file) -> Path:
     """Save an uploaded file to a temp path and return the Path."""
     suffix = Path(uploaded_file.name).suffix
@@ -114,8 +129,10 @@ with st.sidebar:
     gsc_available = "gsc_service_account_json" in st.secrets
     if gsc_available:
         st.success("GSC service account configured")
+        gsc_properties = _list_gsc_properties()
     else:
         st.caption("GSC not configured (optional)")
+        gsc_properties = []
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +166,9 @@ with tab_process:
 
     col1, col2 = st.columns(2)
     with col1:
-        gsc_site = st.text_input("GSC property (optional)", key="process_gsc_site", placeholder="sc-domain:example.com")
+        gsc_options = ["(none)"] + gsc_properties
+        gsc_site_idx = st.selectbox("GSC property (optional)", options=gsc_options, index=0, key="process_gsc_site")
+        gsc_site = gsc_site_idx if gsc_site_idx != "(none)" else ""
     with col2:
         current_url = st.text_input("Current page URL (optional)", key="process_current_url", placeholder="https://...")
 
@@ -334,7 +353,7 @@ with tab_gsc:
     if not gsc_available:
         st.info("Configure `gsc_service_account_json` in secrets to enable this feature.")
     else:
-        gsc_site_opp = st.text_input("GSC property", key="opp_gsc_site", placeholder="sc-domain:example.com")
+        gsc_site_opp = st.selectbox("GSC property", options=gsc_properties, key="opp_gsc_site")
         col1, col2 = st.columns(2)
         with col1:
             opp_days = st.number_input("Lookback days", value=28, min_value=1, max_value=90, key="opp_days")
@@ -342,36 +361,33 @@ with tab_gsc:
             opp_min_imp = st.number_input("Min impressions", value=100, min_value=0, key="opp_min_imp")
 
         if st.button("Compute Opportunities", type="primary", key="opp_run"):
-            if not gsc_site_opp:
-                st.error("Enter a GSC property.")
+            with st.spinner("Fetching GSC data and computing scores..."):
+                from seo_linker.gsc.opportunities import compute_opportunities
+
+                gsc_client = _get_gsc_client()
+                opps = compute_opportunities(gsc_client, gsc_site_opp, opp_days, opp_min_imp)
+
+            if not opps:
+                st.info("No opportunities found.")
             else:
-                with st.spinner("Fetching GSC data and computing scores..."):
-                    from seo_linker.gsc.opportunities import compute_opportunities
+                import pandas as pd
 
-                    gsc_client = _get_gsc_client()
-                    opps = compute_opportunities(gsc_client, gsc_site_opp, opp_days, opp_min_imp)
-
-                if not opps:
-                    st.info("No opportunities found.")
-                else:
-                    import pandas as pd
-
-                    df = pd.DataFrame(
-                        [
-                            {
-                                "Priority": o.priority,
-                                "URL": o.url,
-                                "Impressions": o.impressions,
-                                "Clicks": o.clicks,
-                                "Avg Position": round(o.position, 1),
-                                "CTR": f"{o.ctr:.1%}",
-                                "Score": o.opportunity_score,
-                                "Reason": o.reason,
-                            }
-                            for o in opps
-                        ]
-                    )
-                    st.dataframe(df, use_container_width=True, height=600)
+                df = pd.DataFrame(
+                    [
+                        {
+                            "Priority": o.priority,
+                            "URL": o.url,
+                            "Impressions": o.impressions,
+                            "Clicks": o.clicks,
+                            "Avg Position": round(o.position, 1),
+                            "CTR": f"{o.ctr:.1%}",
+                            "Score": o.opportunity_score,
+                            "Reason": o.reason,
+                        }
+                        for o in opps
+                    ]
+                )
+                st.dataframe(df, use_container_width=True, height=600)
 
 # ---- Tab 5: Cross-Link Gaps ----------------------------------------------
 
@@ -381,7 +397,7 @@ with tab_gaps:
     if not gsc_available:
         st.info("Configure `gsc_service_account_json` in secrets to enable this feature.")
     else:
-        gsc_site_gap = st.text_input("GSC property", key="gap_gsc_site", placeholder="sc-domain:example.com")
+        gsc_site_gap = st.selectbox("GSC property", options=gsc_properties, key="gap_gsc_site")
         col1, col2, col3 = st.columns(3)
         with col1:
             gap_pattern = st.text_input("URL pattern (regex)", value="/magazine/|/magazin/", key="gap_pattern")
@@ -391,34 +407,31 @@ with tab_gaps:
             gap_min_shared = st.number_input("Min shared queries", value=2, min_value=1, key="gap_min_shared")
 
         if st.button("Find Cross-Link Gaps", type="primary", key="gap_run"):
-            if not gsc_site_gap:
-                st.error("Enter a GSC property.")
+            with st.spinner("Analysing query overlaps..."):
+                from seo_linker.gsc.cross_linker import find_cross_link_gaps
+
+                gsc_client = _get_gsc_client()
+                gaps = find_cross_link_gaps(
+                    gsc_client, gsc_site_gap, gap_pattern, gap_days, gap_min_shared
+                )
+
+            if not gaps:
+                st.info("No cross-linking gaps found.")
             else:
-                with st.spinner("Analysing query overlaps..."):
-                    from seo_linker.gsc.cross_linker import find_cross_link_gaps
+                import pandas as pd
 
-                    gsc_client = _get_gsc_client()
-                    gaps = find_cross_link_gaps(
-                        gsc_client, gsc_site_gap, gap_pattern, gap_days, gap_min_shared
-                    )
-
-                if not gaps:
-                    st.info("No cross-linking gaps found.")
-                else:
-                    import pandas as pd
-
-                    df = pd.DataFrame(
-                        [
-                            {
-                                "Suggestion": g.suggestion,
-                                "Source URL": g.source_url,
-                                "Target URL": g.target_url,
-                                "Shared Queries": ", ".join(g.shared_queries[:5]),
-                                "Shared Count": g.shared_query_count,
-                                "Target Impressions": g.target_impressions,
-                                "Relevance Score": round(g.relevance_score, 1),
-                            }
-                            for g in gaps
-                        ]
-                    )
-                    st.dataframe(df, use_container_width=True, height=600)
+                df = pd.DataFrame(
+                    [
+                        {
+                            "Suggestion": g.suggestion,
+                            "Source URL": g.source_url,
+                            "Target URL": g.target_url,
+                            "Shared Queries": ", ".join(g.shared_queries[:5]),
+                            "Shared Count": g.shared_query_count,
+                            "Target Impressions": g.target_impressions,
+                            "Relevance Score": round(g.relevance_score, 1),
+                        }
+                        for g in gaps
+                    ]
+                )
+                st.dataframe(df, use_container_width=True, height=600)

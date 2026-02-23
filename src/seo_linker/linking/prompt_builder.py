@@ -53,6 +53,17 @@ Contextual links embedded in body paragraphs are the most valuable type of inter
 Only link to specific, deep pages.
 14. **Link format**: Use markdown link syntax: [anchor text](URL)
 
+### GSC data awareness
+When candidate pages include GSC metrics (impressions, clicks, average position):
+- **Prioritize pages with high impressions and position 4-15** — these benefit most from \
+internal link equity and are close to ranking breakthroughs.
+- **Pages with position 1-3 are already strong** — link to them when semantically relevant, \
+but don't prioritize them over pages that need the boost.
+- **Use GSC top queries as relevance signals** — if a candidate page's top queries overlap \
+with the content's topic, that's a strong indicator of semantic fit.
+- **GSC data is supplementary, not mandatory** — if no GSC data is present, proceed with \
+semantic relevance alone (the existing behavior).
+
 ## Output format
 
 Return TWO sections separated by the exact marker `---REPORT---`:
@@ -101,6 +112,11 @@ def build_user_prompt(
             line += f"\n   Title: {page.title}"
         if page.meta_description:
             line += f"\n   Description: {page.meta_description}"
+        # GSC metrics (only if data exists)
+        if page.impressions > 0:
+            line += f"\n   GSC: {page.impressions:,} impressions, {page.clicks:,} clicks, avg position {page.avg_position:.1f}"
+            if page.top_queries:
+                line += f"\n   Top queries: {', '.join(page.top_queries[:5])}"
         parts.append(line)
 
     parts.append("\n## Content to process\n")

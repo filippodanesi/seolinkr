@@ -13,6 +13,11 @@ class TargetPage:
     title: str = ""
     meta_description: str = ""
     body_text: str = ""
+    # GSC metrics (populated by GSCClient.enrich_candidates)
+    impressions: int = 0
+    clicks: int = 0
+    avg_position: float = 0.0
+    top_queries: list[str] = field(default_factory=list)
 
     @property
     def display_text(self) -> str:
@@ -21,6 +26,8 @@ class TargetPage:
             parts.append(f"Title: {self.title}")
         if self.meta_description:
             parts.append(f"Description: {self.meta_description}")
+        if self.impressions > 0:
+            parts.append(f"GSC: {self.impressions} imp, pos {self.avg_position:.1f}")
         return " | ".join(parts)
 
     @property
@@ -39,6 +46,26 @@ class TargetPage:
             path = urlparse(self.url).path.strip("/")
             parts.append(path.replace("-", " ").replace("/", " "))
         return ". ".join(parts)
+
+    @property
+    def opportunity_score(self) -> float:
+        """Opportunity score: how much this page would benefit from internal links.
+
+        Higher = more benefit. Pages with high impressions in position 4-15
+        gain the most from link equity boosts.
+        Returns 0.0 if no GSC data.
+        """
+        if self.impressions == 0:
+            return 0.0
+        import math
+        volume = min(1.0, math.log10(max(self.impressions, 1)) / 4.7)
+        if 4 <= self.avg_position <= 15:
+            position = 1.0 - abs(self.avg_position - 8) / 12
+        elif self.avg_position < 4:
+            position = 0.4
+        else:
+            position = max(0, 0.3 - (self.avg_position - 15) / 50)
+        return round(volume * position, 3)
 
 
 @dataclass

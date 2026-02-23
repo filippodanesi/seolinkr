@@ -34,6 +34,7 @@ def run_pipeline(
     model: str | None = None,
     current_url: str | None = None,
     config: Config | None = None,
+    gsc_site: str | None = None,
 ) -> LinkingResult:
     """Execute the full internal linking pipeline."""
     config = config or Config.load()
@@ -98,6 +99,18 @@ def run_pipeline(
     click.echo(f"Pre-filtering to top {top_n} candidates via embeddings...")
     candidates = prefilter_pages(sections, pages, top_n, config.embedding_model)
     click.echo(f"  Selected {len(candidates)} candidate pages")
+
+    # Step 4b: Enrich with GSC data (optional — zero API calls if cached)
+    if gsc_site:
+        from seo_linker.gsc.client import GSCClient
+        gsc = GSCClient(
+            service_account_path=config.gsc_service_account or None,
+            oauth_client_secrets_path=config.gsc_oauth_secrets or None,
+            cache_ttl_hours=config.gsc_cache_ttl,
+        )
+        candidates = gsc.enrich_candidates(candidates, gsc_site)
+        enriched_gsc = sum(1 for p in candidates if p.impressions > 0)
+        click.echo(f"  GSC data: {enriched_gsc}/{len(candidates)} pages with metrics")
 
     # Step 5: Claude linking
     click.echo(f"Sending to Claude ({model}) for semantic link insertion...")

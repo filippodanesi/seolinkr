@@ -20,6 +20,10 @@ class Config:
     embedding_model: str = "intfloat/multilingual-e5-small"
     cache_ttl_hours: int = 24
     sitemaps: dict[str, str] = field(default_factory=dict)  # name -> sitemap URL
+    # GSC settings
+    gsc_service_account: str = ""       # Path to service account JSON
+    gsc_oauth_secrets: str = ""         # Path to OAuth client secrets JSON
+    gsc_cache_ttl: int = 48             # Hours to cache GSC data (default: 48)
 
     def save(self) -> None:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)

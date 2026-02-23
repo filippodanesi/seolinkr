@@ -21,6 +21,13 @@ dependencies = [
     "tenacity>=8.2",
 ]
 
+[project.optional-dependencies]
+gsc = [
+    "google-api-python-client>=2.100",
+    "google-auth>=2.0",
+    "google-auth-oauthlib>=1.2",
+]
+
 [project.scripts]
 seo-linker = "seo_linker.cli:cli"
 

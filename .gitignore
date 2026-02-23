@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -6,10 +7,41 @@ dist/
 build/
 .eggs/
 *.egg
+*.so
+
+# Virtual environments
 .env
 .venv/
 venv/
+env/
+
+# Caches
 .cache/
-*.so
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials — NEVER commit
+service-account.json
+client_secrets.json
+**/gsc_token.json
+
+# Sample content files
+*.md.bak
+*_linked.md
+*_linked.docx
+*_linked.xlsx
+
+# Spec file (internal dev reference)
+SEO_LINKER_REFACTOR_SPEC.md

@@ -332,7 +332,7 @@ with tab_candidates:
                     for p in candidates
                 ]
             )
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width="stretch")
 
             st.download_button(
                 "Download candidates JSON",
@@ -390,7 +390,7 @@ with tab_audit:
                 df = pd.DataFrame(
                     [{"Anchor": lnk.anchor, "URL": lnk.url, "Type": lnk.link_type} for lnk in result.links]
                 )
-                st.dataframe(df, use_container_width=True)
+                st.dataframe(df, width="stretch")
 
 # ---- Tab 4: GSC Opportunities --------------------------------------------
 
@@ -434,7 +434,7 @@ with tab_gsc:
                         for o in opps
                     ]
                 )
-                st.dataframe(df, use_container_width=True, height=600)
+                st.dataframe(df, width="stretch", height=600)
 
 # ---- Tab 5: Cross-Link Gaps ----------------------------------------------
 
@@ -481,4 +481,4 @@ with tab_gaps:
                         for g in gaps
                     ]
                 )
-                st.dataframe(df, use_container_width=True, height=600)
+                st.dataframe(df, width="stretch", height=600)

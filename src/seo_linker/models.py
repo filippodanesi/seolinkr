@@ -95,3 +95,4 @@ class LinkingResult:
     insertions: list[LinkInsertion] = field(default_factory=list)
     candidate_pages_count: int = 0
     total_sitemap_pages: int = 0
+    rewritten_text: str = ""

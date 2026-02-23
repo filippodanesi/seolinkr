@@ -185,6 +185,22 @@ with tab_process:
         with col2:
             current_url = st.text_input("Current page URL (optional)", placeholder="https://...")
 
+        st.divider()
+        enable_rewrite = st.checkbox("Rewrite/optimize content before linking")
+        rw_col1, rw_col2 = st.columns(2)
+        with rw_col1:
+            content_type = st.radio(
+                "Content type",
+                ["Existing article", "Rough draft"],
+                horizontal=True,
+            )
+        with rw_col2:
+            rewrite_instructions = st.text_area(
+                "Custom rewrite instructions (optional)",
+                placeholder="e.g. Focus on trail running, keep a casual tone...",
+                height=80,
+            )
+
         submitted = st.form_submit_button("Run Pipeline", type="primary")
 
     if submitted:
@@ -214,6 +230,9 @@ with tab_process:
                     log_lines.append(msg)
                     log_area.text("\n".join(log_lines))
 
+                # Map UI labels to pipeline values
+                ct_value = "rough_draft" if content_type == "Rough draft" else "existing_article"
+
                 try:
                     result = run_pipeline(
                         input_path=input_path,
@@ -228,10 +247,17 @@ with tab_process:
                         log_fn=_log,
                         brand_guidelines=_get_brand_guidelines(),
                         gsc_client=_get_gsc_client() if gsc_site else None,
+                        enable_rewrite=enable_rewrite,
+                        content_type=ct_value,
+                        rewrite_instructions=rewrite_instructions.strip() or None,
                     )
                     status.update(label="Pipeline completed!", state="complete")
 
                     st.success(f"Inserted **{len(result.insertions)}** links")
+
+                    if result.rewritten_text:
+                        with st.expander("View rewritten content (before linking)"):
+                            st.markdown(result.rewritten_text)
 
                     if result.insertions:
                         st.markdown("**Link report:**")

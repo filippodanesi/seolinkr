@@ -78,6 +78,11 @@ def _get_gsc_client(config: Config):
 @click.option("--model", default=None, help="Claude model to use")
 @click.option("--current-url", default=None, help="URL of the current page (to prevent self-linking)")
 @click.option("--gsc-site", default=None, help="GSC property (e.g. sc-domain:example.com) for enrichment")
+@click.option("--rewrite/--no-rewrite", default=False, help="Rewrite/optimize content before linking")
+@click.option("--content-type", type=click.Choice(["existing_article", "rough_draft"]), default="existing_article",
+              help="Content type: existing_article (optimize) or rough_draft (expand)")
+@click.option("--brand-guidelines", type=click.Path(exists=True, path_type=Path), default=None,
+              help="Path to a markdown file with brand/tone-of-voice guidelines")
 def process(
     file: Path,
     sitemaps: tuple[str, ...],
@@ -88,6 +93,9 @@ def process(
     model: str | None,
     current_url: str | None,
     gsc_site: str | None,
+    rewrite: bool,
+    content_type: str,
+    brand_guidelines: Path | None,
 ):
     """Process a file and insert internal links.
 
@@ -107,6 +115,9 @@ def process(
             "Save sitemaps with: seo-linker add-sitemap NAME URL"
         )
 
+    # Load brand guidelines from file if provided
+    bg_text = brand_guidelines.read_text(encoding="utf-8") if brand_guidelines else None
+
     try:
         run_pipeline(
             input_path=file,
@@ -118,6 +129,9 @@ def process(
             current_url=current_url,
             config=config,
             gsc_site=gsc_site,
+            brand_guidelines=bg_text,
+            enable_rewrite=rewrite,
+            content_type=content_type,
         )
     except PipelineError as e:
         raise click.ClickException(str(e))

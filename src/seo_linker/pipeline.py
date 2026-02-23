@@ -43,6 +43,9 @@ def run_pipeline(
     log_fn: Callable[[str], None] | None = None,
     brand_guidelines: str | None = None,
     gsc_client: object | None = None,
+    enable_rewrite: bool = False,
+    content_type: str = "existing_article",
+    rewrite_instructions: str | None = None,
 ) -> LinkingResult:
     """Execute the full internal linking pipeline."""
     log_fn = log_fn or click.echo
@@ -68,6 +71,25 @@ def run_pipeline(
     sections = parser.parse(input_path)
     total_words = sum(len(s.text.split()) for s in sections)
     log_fn(f"  Found {len(sections)} section(s), ~{total_words} words")
+
+    # Step 1b: Rewrite/optimize content (optional — before sitemap fetch)
+    rewritten_text = ""
+    if enable_rewrite:
+        log_fn(f"Rewriting content ({content_type})...")
+        from seo_linker.rewriting.claude_rewriter import rewrite_content
+
+        sections = rewrite_content(
+            sections,
+            api_key=config.api_key,
+            model=model,
+            brand_guidelines=brand_guidelines,
+            content_type=content_type,
+            custom_instructions=rewrite_instructions,
+            log_fn=log_fn,
+        )
+        rewritten_text = "\n\n".join(s.text for s in sections)
+        rewritten_words = len(rewritten_text.split())
+        log_fn(f"  Rewrite complete: ~{rewritten_words} words")
 
     # Step 2: Fetch sitemaps (merge all)
     pages: list[TargetPage] = []
@@ -130,6 +152,7 @@ def run_pipeline(
     )
     result.total_sitemap_pages = len(pages)
     result.candidate_pages_count = len(candidates)
+    result.rewritten_text = rewritten_text
     log_fn(f"  Inserted {len(result.insertions)} links")
 
     # Step 6: Write output

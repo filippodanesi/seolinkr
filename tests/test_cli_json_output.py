@@ -22,11 +22,11 @@ def sample_md(tmp_path):
     content = """\
 # Test Article
 
-This is a test article about bras and comfort.
+This is a test article about shoes and comfort.
 
 ## Section One
 
-Looking for comfortable bras without underwire? Our collection has everything.
+Looking for comfortable shoes without arch support? Our collection has everything.
 
 ## Section Two
 
@@ -55,7 +55,7 @@ class TestAuditJsonOutput:
         assert "Audit:" in result.output
 
     def test_audit_with_domain(self, runner, sample_md):
-        result = runner.invoke(cli, ["audit", str(sample_md), "--domain", "de.triumph.com", "--format", "json"])
+        result = runner.invoke(cli, ["audit", str(sample_md), "--domain", "www.example.com", "--format", "json"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["file"] == "test.md"

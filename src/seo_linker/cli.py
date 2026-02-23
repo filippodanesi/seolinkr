@@ -77,7 +77,7 @@ def _get_gsc_client(config: Config):
 @click.option("--top-n", type=int, default=None, help="Number of candidate pages from embedding pre-filter (default: 25)")
 @click.option("--model", default=None, help="Claude model to use")
 @click.option("--current-url", default=None, help="URL of the current page (to prevent self-linking)")
-@click.option("--gsc-site", default=None, help="GSC property (e.g. sc-domain:de.triumph.com) for enrichment")
+@click.option("--gsc-site", default=None, help="GSC property (e.g. sc-domain:example.com) for enrichment")
 def process(
     file: Path,
     sitemaps: tuple[str, ...],
@@ -155,7 +155,7 @@ def config(api_key, model, max_links, top_n, gsc_service_account, gsc_oauth_secr
 def add_sitemap(name: str, url: str):
     """Save a sitemap URL with a short name for easy reuse.
 
-    Example: seo-linker add-sitemap triumph-uk https://uk.triumph.com/sitemap_index.xml
+    Example: seo-linker add-sitemap my-site https://www.example.com/sitemap_index.xml
     """
     cfg = Config.load()
     cfg.sitemaps[name] = url
@@ -214,7 +214,7 @@ def analyze_sitemap(url: str):
 # ---------------------------------------------------------------------------
 
 @cli.command()
-@click.option("--gsc-site", required=True, help="GSC property (e.g. sc-domain:de.triumph.com)")
+@click.option("--gsc-site", required=True, help="GSC property (e.g. sc-domain:example.com)")
 @click.option("--days", default=28, help="Lookback days (default: 28)")
 @click.option("--min-impressions", default=100, help="Min impressions to include (default: 100)")
 @click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text")
@@ -421,7 +421,7 @@ def link(file: Path, candidates_file: Path, max_links: int | None, output: Path 
 
 @cli.command()
 @click.argument("file", type=click.Path(exists=True, path_type=Path))
-@click.option("--domain", default=None, help="Expected domain (e.g. de.triumph.com)")
+@click.option("--domain", default=None, help="Expected domain (e.g. www.example.com)")
 @click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text")
 def audit(file: Path, domain: str | None, fmt: str):
     """Audit an article's internal links against CLAUDE.md rules."""

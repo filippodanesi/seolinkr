@@ -13,22 +13,22 @@ from seo_linker.audit.checker import audit_file, AuditResult
 def sample_article(tmp_path):
     """Create a sample markdown article with internal links."""
     content = """\
-# Best Bras Guide
+# Best Running Shoes Guide
 
-Looking for the perfect bra? Our guide covers everything from
-[bügellose BHs](https://de.triumph.com/bhs/ohne-buegel) to supportive
-[Sport-BHs](https://de.triumph.com/sport-bhs) and comfortable
-[Baumwoll-BHs](https://de.triumph.com/bhs/baumwoll-bhs).
+Looking for the perfect running shoe? Our guide covers everything from
+[trail running shoes](https://www.example.com/shoes/trail) to supportive
+[road running shoes](https://www.example.com/shoes/road) and comfortable
+[walking shoes](https://www.example.com/shoes/walking).
 
 ## Why Internal Links Matter
 
 Internal links help readers discover more content on our site.
-Check out our [Spitzen-BH Guide](https://de.triumph.com/magazin/spitzen-bh-guide)
+Check out our [Marathon Training Guide](https://www.example.com/blog/marathon-training)
 for more inspiration.
 
 ## Top Picks
 
-Our favorite pick is the [Triaction Zen](https://de.triumph.com/triaction-zen.html)
+Our favorite pick is the [UltraBoost Pro](https://www.example.com/ultraboost-pro.html)
 which offers great support for active lifestyles.
 """
     file_path = tmp_path / "test_article.md"
@@ -40,15 +40,15 @@ which offers great support for active lifestyles.
 def article_with_issues(tmp_path):
     """Create an article with various audit issues."""
     content = """\
-# [Bad Heading Link](https://de.triumph.com/bhs)
+# [Bad Heading Link](https://www.example.com/shoes)
 
-Click [hier](https://de.triumph.com/bhs) to see our collection.
-Also check [hier](https://de.triumph.com/bhs/ohne-buegel) for more.
+Click [here](https://www.example.com/shoes) to see our collection.
+Also check [here](https://www.example.com/shoes/trail) for more.
 
-Visit [more](https://de.triumph.com/sport-bhs) to learn about sports bras.
-And [link](https://de.triumph.com/bhs/baumwoll-bhs) for cotton bras.
+Visit [more](https://www.example.com/shoes/road) to learn about road shoes.
+And [link](https://www.example.com/shoes/walking) for walking shoes.
 
-Same URL twice: [BHs](https://de.triumph.com/bhs) and [Kollektion](https://de.triumph.com/bhs).
+Same URL twice: [Shoes](https://www.example.com/shoes) and [Collection](https://www.example.com/shoes).
 """
     file_path = tmp_path / "bad_article.md"
     file_path.write_text(content, encoding="utf-8")
@@ -57,46 +57,46 @@ Same URL twice: [BHs](https://de.triumph.com/bhs) and [Kollektion](https://de.tr
 
 class TestAuditFile:
     def test_counts_link_types(self, sample_article):
-        result = audit_file(sample_article, "de.triumph.com")
+        result = audit_file(sample_article, "www.example.com")
         assert result.total_links == 5
-        assert result.category_links == 3  # ohne-buegel, sport-bhs, baumwoll-bhs
-        assert result.magazine_links == 1  # magazin/spitzen-bh-guide
+        assert result.category_links == 4  # trail, road, walking, blog/marathon-training
+        assert result.magazine_links == 0
         assert result.product_links == 1  # .html product
 
     def test_detects_generic_anchors(self, article_with_issues):
-        result = audit_file(article_with_issues, "de.triumph.com")
+        result = audit_file(article_with_issues, "www.example.com")
         generic_issues = [i for i in result.issues if i.type == "generic_anchor"]
-        # "hier", "more", "link" are generic
+        # "here", "more", "link" are generic
         anchors_flagged = {i.anchor for i in generic_issues}
-        assert "hier" in anchors_flagged
+        assert "here" in anchors_flagged
         assert "more" in anchors_flagged
         assert "link" in anchors_flagged
 
     def test_detects_heading_links(self, article_with_issues):
-        result = audit_file(article_with_issues, "de.triumph.com")
+        result = audit_file(article_with_issues, "www.example.com")
         heading_issues = [i for i in result.issues if i.type == "heading_link"]
         assert len(heading_issues) == 1
         assert heading_issues[0].severity == "error"
 
     def test_detects_duplicate_urls(self, article_with_issues):
-        result = audit_file(article_with_issues, "de.triumph.com")
+        result = audit_file(article_with_issues, "www.example.com")
         dup_issues = [i for i in result.issues if i.type == "duplicate_url"]
         assert len(dup_issues) >= 1
-        assert any("https://de.triumph.com/bhs" in i.url for i in dup_issues)
+        assert any("https://www.example.com/shoes" in i.url for i in dup_issues)
 
     def test_warns_too_few_category_links(self, tmp_path):
         content = "No links here at all."
         file_path = tmp_path / "empty.md"
         file_path.write_text(content, encoding="utf-8")
-        result = audit_file(file_path, "de.triumph.com")
+        result = audit_file(file_path, "www.example.com")
         category_issues = [i for i in result.issues if i.type == "too_few_category_links"]
         assert len(category_issues) == 1
 
     def test_warns_missing_cross_links(self, tmp_path):
-        content = "Some [BHs](https://de.triumph.com/bhs) content."
+        content = "Some [shoes](https://www.example.com/shoes) content."
         file_path = tmp_path / "no_magazine.md"
         file_path.write_text(content, encoding="utf-8")
-        result = audit_file(file_path, "de.triumph.com")
+        result = audit_file(file_path, "www.example.com")
         cross_issues = [i for i in result.issues if i.type == "missing_cross_link"]
         assert len(cross_issues) == 1
 
@@ -107,7 +107,7 @@ class TestAuditFile:
         assert result.category_links >= 3
 
     def test_clean_article_minimal_issues(self, sample_article):
-        result = audit_file(sample_article, "de.triumph.com")
+        result = audit_file(sample_article, "www.example.com")
         # This article meets minimum requirements
         error_issues = [i for i in result.issues if i.severity == "error"]
         assert len(error_issues) == 0
@@ -116,5 +116,5 @@ class TestAuditFile:
         content = "Check [Google](https://www.google.com) for more."
         file_path = tmp_path / "external.md"
         file_path.write_text(content, encoding="utf-8")
-        result = audit_file(file_path, "de.triumph.com")
+        result = audit_file(file_path, "www.example.com")
         assert result.external_links == 1

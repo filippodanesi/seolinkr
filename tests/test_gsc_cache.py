@@ -84,6 +84,6 @@ class TestGSCCache:
 
     def test_key_path_sanitizes_url(self, cache, tmp_path):
         with patch("seo_linker.gsc.cache.GSC_CACHE_DIR", tmp_path):
-            path = cache._key_path("sc-domain:de.triumph.com", "page_metrics")
+            path = cache._key_path("sc-domain:example.com", "page_metrics")
             assert "://" not in path.name
             assert path.suffix == ".json"

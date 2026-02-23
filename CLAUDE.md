@@ -1,19 +1,19 @@
 ## 17. INTERNAL LINKING RULES
 
-These rules apply to all Triumph Magazine articles. They govern how internal links are placed, what they point to, and how anchor text is written. The seo-linker tool enforces these rules programmatically; human writers and Claude Code should also follow them when creating or reviewing content.
+These rules govern how internal links are placed, what they point to, and how anchor text is written. The seo-linker tool enforces these rules programmatically; human writers and Claude Code should also follow them when creating or reviewing content.
 
 ### 17.1 Link targets — minimum requirements
 
-- **Every article: minimum 3 links to category pages** (e.g. /bhs, /bhs/ohne-buegel, /bralette)
-- **Every article: minimum 1 link to another magazine article** (cross-link)
-- **Every product mention in "Top Picks" / "Unsere Top-Empfehlungen": direct PDP link** with clear CTA (e.g. "Entdecken →" or "[Product Name] entdecken →")
-- **Bra size calculator link**: include in every article that discusses fit, sizing, or finding the right bra — link to the market-specific calculator URL
+- **Every article: minimum 3 links to category pages** (e.g. /shoes, /shoes/running, /accessories)
+- **Every article: minimum 1 link to another magazine/blog article** (cross-link)
+- **Every product mention in "Top Picks" sections: direct PDP link** with clear CTA (e.g. "Discover [Product Name] →")
+- **Calculator/tool links**: include in every article that discusses sizing, fit, or product selection — link to the market-specific tool URL
 
 ### 17.2 Anchor text
 
 - **Descriptive, 2-4 words preferred**, containing the target page's primary keyword or a natural variation
-- **Never generic**: "hier klicken", "mehr erfahren", "click here", "learn more" are never acceptable
-- **Vary across the article**: mix exact-match keywords, partial matches, contextual phrases, and long-tail variations. If linking to /bhs/ohne-buegel, don't always use "BHs ohne Bügel" — also use "bügellose Modelle", "bequeme BHs ohne Bügel", "wire-free options"
+- **Never generic**: "click here", "learn more", "read more", "this page" are never acceptable
+- **Vary across the article**: mix exact-match keywords, partial matches, contextual phrases, and long-tail variations. If linking to /shoes/running, don't always use "running shoes" — also use "lightweight trainers", "shoes for your daily run", etc.
 - **Never rewrite sentences to create keyword-rich anchors**. Use phrases already present in the text
 
 ### 17.3 Placement
@@ -24,23 +24,18 @@ These rules apply to all Triumph Magazine articles. They govern how internal lin
 - **Concentrate links in the top two-thirds** of the article — readers scroll less in the bottom third, and link equity distribution favours earlier links
 - **Links in FAQ answers are acceptable** but should be secondary to body-text links
 
-### 17.4 Cross-linking between magazine articles
+### 17.4 Cross-linking between blog articles
 
-- **Every article must link to at least 1 related magazine article** in the same market
-- **Cross-links are based on**: shared GSC queries (when data is available), thematic relevance (always), and complementary topics (e.g. cotton bra guide ↔ lace bra guide as comfort vs. aesthetics)
+- **Every article must link to at least 1 related blog article** in the same market
+- **Cross-links are based on**: shared GSC queries (when data is available), thematic relevance (always), and complementary topics
 - **Place cross-links in the section most relevant** to the linked article's topic, not in a generic "related articles" block at the bottom
-- **Cross-links should feel editorial, not mechanical**: integrate them into the narrative flow. Example: "For women who find cotton too plain, our [Spitzen-BH Guide](URL) explores how lace can deliver both beauty and comfort"
+- **Cross-links should feel editorial, not mechanical**: integrate them into the narrative flow
 
 ### 17.5 Market-specific rules
 
-- **DE articles link to de.triumph.com URLs only**
-- **UK articles link to uk.triumph.com URLs only**
-- **EU, CH, SE, ES, PT, PL articles link to their respective subdomains**
+- **Each market's articles link to that market's subdomain only** (e.g. de.example.com articles link only to de.example.com URLs)
 - **Product recommendations may differ by market** — verify product availability on the target domain before linking to a PDP
-- **Bra size calculator URL differs by market**:
-  - DE: /bh-groessen-rechner-passform-guide
-  - UK: /bra-size-calculator-fitting-guide
-  - Verify the correct path for other markets
+- **Tool/calculator URLs may differ by market** — verify the correct path for each locale
 
 ### 17.6 GSC-informed linking (when data is available)
 
@@ -54,10 +49,10 @@ These rules apply to all Triumph Magazine articles. They govern how internal lin
 ## Pre-Publish Checklist — Internal Linking
 
 - [ ] Are there at least 3 links to category pages?
-- [ ] Is there at least 1 link to another magazine article (cross-link)?
+- [ ] Is there at least 1 link to another blog/magazine article (cross-link)?
 - [ ] Does every product mention in "Top Picks" include a direct PDP link?
 - [ ] Is the first internal link within the first 200 words?
-- [ ] Are all anchor texts descriptive (no "hier klicken" or "mehr erfahren")?
+- [ ] Are all anchor texts descriptive (no generic "click here" or "learn more")?
 - [ ] Are anchor texts varied (not all exact-match keywords)?
 - [ ] Are there zero links inside headings?
 - [ ] Do all links point to the correct market subdomain?

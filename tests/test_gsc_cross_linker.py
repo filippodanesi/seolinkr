@@ -12,10 +12,10 @@ from seo_linker.gsc.cross_linker import find_cross_link_gaps, _short_path
 
 class TestShortPath:
     def test_extracts_last_segment(self):
-        assert _short_path("https://de.triumph.com/magazin/baumwoll-bh-guide") == "baumwoll-bh-guide"
+        assert _short_path("https://www.example.com/blog/running-guide") == "running-guide"
 
     def test_handles_trailing_slash(self):
-        assert _short_path("https://de.triumph.com/magazin/baumwoll-bh-guide/") == "baumwoll-bh-guide"
+        assert _short_path("https://www.example.com/blog/running-guide/") == "running-guide"
 
     def test_handles_no_path(self):
         result = _short_path("https://example.com")
@@ -37,7 +37,7 @@ class TestFindCrossLinkGaps:
 
     def test_single_page_returns_empty(self):
         client = self._make_mock_client(
-            {"https://test.com/a": [QueryData(query="bh guide", impressions=100)]},
+            {"https://test.com/a": [QueryData(query="running guide", impressions=100)]},
             {},
         )
         result = find_cross_link_gaps(client, "sc-domain:test.com")
@@ -46,14 +46,14 @@ class TestFindCrossLinkGaps:
     def test_shared_queries_produce_bidirectional_opportunities(self):
         page_queries = {
             "https://test.com/article-a": [
-                QueryData(query="baumwoll bh", impressions=500),
-                QueryData(query="weicher bh", impressions=300),
-                QueryData(query="bh empfindliche haut", impressions=200),
+                QueryData(query="running shoes", impressions=500),
+                QueryData(query="trail running", impressions=300),
+                QueryData(query="best running gear", impressions=200),
             ],
             "https://test.com/article-b": [
-                QueryData(query="weicher bh", impressions=400),
-                QueryData(query="bh empfindliche haut", impressions=250),
-                QueryData(query="spitzen bh", impressions=100),
+                QueryData(query="trail running", impressions=400),
+                QueryData(query="best running gear", impressions=250),
+                QueryData(query="hiking boots", impressions=100),
             ],
         }
         page_metrics = {
@@ -73,13 +73,13 @@ class TestFindCrossLinkGaps:
         # Check shared queries
         for opp in result:
             assert opp.shared_query_count == 2
-            assert "weicher bh" in opp.shared_queries
-            assert "bh empfindliche haut" in opp.shared_queries
+            assert "trail running" in opp.shared_queries
+            assert "best running gear" in opp.shared_queries
 
     def test_min_shared_queries_filter(self):
         page_queries = {
-            "https://test.com/a": [QueryData(query="bh", impressions=100)],
-            "https://test.com/b": [QueryData(query="bh", impressions=100)],
+            "https://test.com/a": [QueryData(query="shoes", impressions=100)],
+            "https://test.com/b": [QueryData(query="shoes", impressions=100)],
         }
         page_metrics = {}
 

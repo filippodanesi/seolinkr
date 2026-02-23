@@ -54,7 +54,7 @@ class GSCClient:
         """Fetch metrics for ALL pages in one bulk API call. Cached.
 
         Args:
-            site_url: GSC property (e.g. "sc-domain:de.triumph.com")
+            site_url: GSC property (e.g. "sc-domain:example.com")
             days: Lookback window (default 28 — roughly one month)
 
         Returns:

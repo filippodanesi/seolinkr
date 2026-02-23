@@ -2,7 +2,7 @@
 
 CLI tool for automated internal link insertion into blog articles (Markdown, DOCX, XLSX). Uses sitemap data, multilingual embeddings, Google Search Console metrics, and the Claude API to place semantically relevant internal links.
 
-Built for multi-market e-commerce content workflows (15+ localized domains).
+Built for multi-market e-commerce content workflows.
 
 ## Features
 
@@ -36,7 +36,7 @@ Requires Python 3.10+.
 seo-linker config --api-key YOUR_KEY
 
 # Save a sitemap for reuse
-seo-linker add-sitemap triumph-de https://de.triumph.com/sitemap_index.xml
+seo-linker add-sitemap my-site https://www.example.com/sitemap_index.xml
 
 # Optional: configure GSC
 seo-linker config --gsc-service-account /path/to/service-account.json
@@ -45,7 +45,7 @@ seo-linker config --gsc-service-account /path/to/service-account.json
 ### 2. Process an article (one-shot)
 
 ```bash
-seo-linker process article.md --sitemap triumph-de --max-links 10
+seo-linker process article.md --sitemap my-site --max-links 10
 ```
 
 This runs the full pipeline: parse → fetch sitemap → enrich pages → embedding prefilter → Claude linking → write output.
@@ -56,7 +56,7 @@ Output: `article_linked.md`
 
 ```bash
 # Step 1: Find and rank candidate pages
-seo-linker candidates article.md --sitemap triumph-de --gsc-site "https://de.triumph.com/" --format json > candidates.json
+seo-linker candidates article.md --sitemap my-site --gsc-site "https://www.example.com/" --format json > candidates.json
 
 # Step 2: Insert links using pre-computed candidates
 seo-linker link article.md --candidates candidates.json --max-links 10
@@ -117,16 +117,16 @@ seo-linker config --gsc-service-account /path/to/service-account.json
 
 ```bash
 # Prioritized pages — which pages need internal links most?
-seo-linker opportunities --gsc-site "https://de.triumph.com/" --format json
+seo-linker opportunities --gsc-site "https://www.example.com/" --format json
 
 # Cross-linking gaps — which blog articles should link to each other?
-seo-linker cross-gaps --gsc-site "https://de.triumph.com/" --url-pattern "/magazin/" --format json
+seo-linker cross-gaps --gsc-site "https://www.example.com/" --url-pattern "/blog/" --format json
 
 # Enrich candidates with GSC data
-seo-linker candidates article.md --sitemap triumph-de --gsc-site "https://de.triumph.com/" --format json
+seo-linker candidates article.md --sitemap my-site --gsc-site "https://www.example.com/" --format json
 
 # Full pipeline with GSC enrichment
-seo-linker process article.md --sitemap triumph-de --gsc-site "https://de.triumph.com/"
+seo-linker process article.md --sitemap my-site --gsc-site "https://www.example.com/"
 ```
 
 ## JSON Output
@@ -138,7 +138,7 @@ All new commands support `--format json` for machine consumption. When `--format
 ```json
 [
   {
-    "url": "https://de.triumph.com/bhs/push-up",
+    "url": "https://www.example.com/shoes/running",
     "impressions": 27137,
     "clicks": 850,
     "position": 7.6,
@@ -155,9 +155,9 @@ All new commands support `--format json` for machine consumption. When `--format
 ```json
 [
   {
-    "url": "https://de.triumph.com/bhs/ohne-buegel",
-    "title": "BHs ohne Bügel — Triumph",
-    "meta_description": "Bequeme bügellose BHs von Triumph...",
+    "url": "https://www.example.com/shoes/trail",
+    "title": "Trail Running Shoes — Example Store",
+    "meta_description": "Durable trail running shoes for all terrains...",
     "impressions": 51643,
     "clicks": 1686,
     "avg_position": 3.9,
@@ -179,8 +179,8 @@ All new commands support `--format json` for machine consumption. When `--format
   "issues": [],
   "links": [
     {
-      "anchor_text": "bügellose BHs",
-      "target_url": "https://de.triumph.com/bhs/ohne-buegel",
+      "anchor_text": "trail running shoes",
+      "target_url": "https://www.example.com/shoes/trail",
       "link_type": "category"
     }
   ]

@@ -52,15 +52,15 @@ def _detect_accept_language(urls: list[str]) -> str:
     """Detect the best Accept-Language from the sitemap URLs."""
     if not urls:
         return "en-US,en;q=0.9"
-    # Check subdomain first (e.g. uk.triumph.com), then TLD
+    # Check subdomain first (e.g. uk.example.com), then TLD
     host = urlparse(urls[0]).hostname or ""
     parts = host.split(".")
-    # Subdomain: uk.triumph.com → "uk"
+    # Subdomain: uk.example.com → "uk"
     if len(parts) >= 3:
         subdomain = parts[0].lower()
         if subdomain in _LANG_MAP:
             return _LANG_MAP[subdomain]
-    # TLD: triumph.de → "de"
+    # TLD: example.de → "de"
     tld = parts[-1].lower() if parts else ""
     return _LANG_MAP.get(tld, "en-US,en;q=0.9")
 
@@ -178,8 +178,8 @@ def _clean_title(title: str) -> str:
 
     Splits on common separators (|, -, –, —, :) and keeps the meaningful part.
     If the first segment is too short (1 word), keeps first + second segment
-    to avoid over-trimming (e.g. "Bras | Triumph | Women's Lingerie" → "Bras | Triumph"
-    would still be too generic, so we get "Bras Triumph" instead of just "Bras").
+    to avoid over-trimming (e.g. "Bras | BrandName | Women's Lingerie" → "Bras | BrandName"
+    would still be too generic, so we get "Bras BrandName" instead of just "Bras").
     """
     parts = re.split(r"\s*[|–—]\s*|\s+-\s+|\s*:\s+", title)
     if len(parts) <= 1:

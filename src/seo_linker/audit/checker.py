@@ -48,7 +48,7 @@ def audit_file(file_path: Path, site_domain: str | None = None) -> AuditResult:
 
     Args:
         file_path: Path to the markdown file
-        site_domain: Expected domain (e.g. "de.triumph.com") for classifying links.
+        site_domain: Expected domain (e.g. "www.example.com") for classifying links.
                      If None, inferred from the first internal link found.
 
     Returns:
@@ -64,7 +64,7 @@ def audit_file(file_path: Path, site_domain: str | None = None) -> AuditResult:
     if not site_domain:
         for _, url in matches:
             parsed = urlparse(url)
-            if parsed.hostname and "triumph" in parsed.hostname:
+            if parsed.hostname and parsed.scheme in ("http", "https"):
                 site_domain = parsed.hostname
                 break
 

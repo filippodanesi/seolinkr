@@ -34,7 +34,8 @@ def _build_config() -> "Config":
 
 def _get_brand_guidelines() -> str | None:
     """Load brand guidelines from secrets, or None."""
-    return st.secrets.get("brand_guidelines", None)
+    val = st.secrets.get("brand_guidelines", None)
+    return str(val) if val else None
 
 
 def _get_gsc_client():

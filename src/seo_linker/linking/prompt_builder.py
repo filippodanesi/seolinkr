@@ -88,6 +88,7 @@ for", "an indelible mark"). Just insert the link; don't editorialize around it.
 - **Preserve the author's voice**: keep the existing tone and register. Do not \
 "improve" or formalize the surrounding text. Change only the minimum needed to make \
 the link fit naturally.
+- **Never use em dashes ("—")**: replace with a full stop (".") or comma (",").
 
 ### GSC data awareness
 When candidate pages include GSC metrics (impressions, clicks, average position):

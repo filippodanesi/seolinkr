@@ -178,7 +178,9 @@ for", "marks a shift", is "a key turning point", leaves "an indelible mark", or 
 noting", "It's crucial to remember".
 
 ### Style rules
-- **Use em dashes sparingly** — maximum 1-2 per article, not in every paragraph.
+- **Never use em dashes ("—").** Systematically replace every em dash with a full \
+stop (".") to start a new sentence, or a comma (",") to continue the sentence. \
+No exceptions.
 - **Do not overuse boldface.** Bold key terms only where genuinely helpful, not for \
 emphasis in every paragraph.
 - **Vary sentence structure.** Mix short and long sentences. Start some with the \

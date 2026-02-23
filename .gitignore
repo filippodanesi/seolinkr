@@ -36,6 +36,7 @@ Thumbs.db
 service-account.json
 client_secrets.json
 **/gsc_token.json
+.streamlit/secrets.toml
 
 # Sample content files
 *.md.bak

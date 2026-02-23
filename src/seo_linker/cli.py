@@ -94,7 +94,7 @@ def process(
     Use --sitemap with a URL or a saved name. Repeat for multiple sitemaps.
     Use --all-sitemaps to use every saved sitemap at once.
     """
-    from seo_linker.pipeline import run_pipeline
+    from seo_linker.pipeline import PipelineError, run_pipeline
 
     config = Config.load()
 
@@ -107,17 +107,20 @@ def process(
             "Save sitemaps with: seo-linker add-sitemap NAME URL"
         )
 
-    run_pipeline(
-        input_path=file,
-        sitemap_urls=sitemap_urls,
-        output_path=output,
-        max_links=max_links or config.max_links,
-        top_n=top_n or config.top_n,
-        model=model,
-        current_url=current_url,
-        config=config,
-        gsc_site=gsc_site,
-    )
+    try:
+        run_pipeline(
+            input_path=file,
+            sitemap_urls=sitemap_urls,
+            output_path=output,
+            max_links=max_links or config.max_links,
+            top_n=top_n or config.top_n,
+            model=model,
+            current_url=current_url,
+            config=config,
+            gsc_site=gsc_site,
+        )
+    except PipelineError as e:
+        raise click.ClickException(str(e))
 
 
 @cli.command()

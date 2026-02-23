@@ -45,6 +45,13 @@ def enrich_pages(
     pages: list[TargetPage], cache_ttl_hours: int = 24
 ) -> list[TargetPage]:
     """Enrich pages with title and meta description. Uses async I/O internally."""
+    # If already inside an event loop (e.g. Streamlit), apply nest_asyncio
+    try:
+        asyncio.get_running_loop()
+        import nest_asyncio
+        nest_asyncio.apply()
+    except RuntimeError:
+        pass  # No running loop — asyncio.run() will work normally
     return asyncio.run(_enrich_all(pages, cache_ttl_hours))
 
 

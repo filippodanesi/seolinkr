@@ -32,6 +32,11 @@ def _build_config() -> "Config":
     return cfg
 
 
+def _get_brand_guidelines() -> str | None:
+    """Load brand guidelines from secrets, or None."""
+    return st.secrets.get("brand_guidelines", None)
+
+
 def _get_gsc_client():
     """Create a GSC client from st.secrets service account JSON, or None."""
     if "gsc_service_account_json" not in st.secrets:
@@ -126,6 +131,13 @@ with st.sidebar:
     else:
         st.info("No sitemaps configured. Add them in `.streamlit/secrets.toml`.")
 
+    st.divider()
+    st.header("Brand Guidelines")
+    if _get_brand_guidelines():
+        st.success("Brand guidelines loaded from secrets")
+    else:
+        st.caption("No brand guidelines configured (optional). Add `brand_guidelines` key in secrets.")
+
     gsc_available = "gsc_service_account_json" in st.secrets
     if gsc_available:
         st.success("GSC service account configured")
@@ -211,6 +223,7 @@ with tab_process:
                         config=cfg,
                         gsc_site=gsc_site or None,
                         log_fn=_log,
+                        brand_guidelines=_get_brand_guidelines(),
                     )
                     status.update(label="Pipeline completed!", state="complete")
 

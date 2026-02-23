@@ -41,6 +41,7 @@ def run_pipeline(
     config: Config | None = None,
     gsc_site: str | None = None,
     log_fn: Callable[[str], None] | None = None,
+    brand_guidelines: str | None = None,
 ) -> LinkingResult:
     """Execute the full internal linking pipeline."""
     log_fn = log_fn or click.echo
@@ -122,7 +123,8 @@ def run_pipeline(
     # Step 5: Claude linking
     log_fn(f"Sending to Claude ({model}) for semantic link insertion...")
     result = link_content(
-        sections, candidates, config.api_key, model, max_links, current_url
+        sections, candidates, config.api_key, model, max_links, current_url,
+        brand_guidelines=brand_guidelines,
     )
     result.total_sitemap_pages = len(pages)
     result.candidate_pages_count = len(candidates)

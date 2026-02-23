@@ -4,7 +4,27 @@ from __future__ import annotations
 
 from seo_linker.models import TargetPage
 
-SYSTEM_PROMPT = """\
+
+def build_system_prompt(brand_guidelines: str | None = None) -> str:
+    """Build the system prompt, optionally prepending brand guidelines."""
+    parts = []
+    if brand_guidelines:
+        parts.append(
+            "## Brand & Content Guidelines\n\n"
+            "The following brand guidelines, tone of voice, and content rules MUST be "
+            "respected when inserting links. Anchor text and link placement must feel "
+            "consistent with the brand voice described below.\n\n"
+            + brand_guidelines
+            + "\n\n---\n\n"
+        )
+    parts.append(_BASE_SYSTEM_PROMPT)
+    return "".join(parts)
+
+
+# Default prompt for backward compatibility (no brand guidelines)
+SYSTEM_PROMPT = None  # Lazy-initialized below
+
+_BASE_SYSTEM_PROMPT = """\
 You are an expert SEO specialist focused on internal linking. Your task is to insert \
 internal links into the provided content by selecting the most semantically relevant \
 target pages and choosing natural anchor text.
@@ -81,6 +101,9 @@ Example output structure:
 [{"anchor_text": "...", "target_url": "...", "reasoning": "..."}]
 ```
 """
+
+# Backward-compatible constant: system prompt without brand guidelines
+SYSTEM_PROMPT = _BASE_SYSTEM_PROMPT
 
 
 def build_user_prompt(

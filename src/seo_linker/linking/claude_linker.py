@@ -8,7 +8,7 @@ import re
 import anthropic
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from seo_linker.linking.prompt_builder import SYSTEM_PROMPT, build_user_prompt
+from seo_linker.linking.prompt_builder import build_system_prompt, build_user_prompt
 from seo_linker.models import (
     ContentSection,
     LinkInsertion,
@@ -27,20 +27,22 @@ def link_content(
     model: str = "claude-opus-4-6",
     max_links: int = 10,
     current_url: str | None = None,
+    brand_guidelines: str | None = None,
 ) -> LinkingResult:
     """Process content sections through Claude to insert internal links."""
+    system_prompt = build_system_prompt(brand_guidelines)
     full_text = "\n\n".join(s.text for s in sections)
     word_count = len(full_text.split())
 
     if word_count <= CHUNK_WORDS + 500:
-        # Process as single piece
         return _process_single(
-            full_text, candidate_pages, api_key, model, max_links, current_url
+            full_text, candidate_pages, api_key, model, max_links, current_url,
+            system_prompt,
         )
     else:
-        # Chunk processing for long content
         return _process_chunked(
-            full_text, candidate_pages, api_key, model, max_links, current_url
+            full_text, candidate_pages, api_key, model, max_links, current_url,
+            system_prompt,
         )
 
 
@@ -51,9 +53,10 @@ def _process_single(
     model: str,
     max_links: int,
     current_url: str | None,
+    system_prompt: str,
 ) -> LinkingResult:
     user_prompt = build_user_prompt(text, pages, current_url, max_links)
-    response = _call_claude(api_key, model, user_prompt)
+    response = _call_claude(api_key, model, user_prompt, system_prompt)
     linked_text, insertions = _parse_response(response)
 
     return LinkingResult(
@@ -71,6 +74,7 @@ def _process_chunked(
     model: str,
     max_links: int,
     current_url: str | None,
+    system_prompt: str,
 ) -> LinkingResult:
     chunks = _split_into_chunks(text, CHUNK_WORDS)
     linked_chunks: list[str] = []
@@ -90,7 +94,7 @@ def _process_chunked(
         user_prompt = build_user_prompt(
             chunk, pages, current_url, chunk_max, already_linked
         )
-        response = _call_claude(api_key, model, user_prompt)
+        response = _call_claude(api_key, model, user_prompt, system_prompt)
         linked_text, insertions = _parse_response(response)
 
         linked_chunks.append(linked_text)
@@ -129,12 +133,12 @@ def _split_into_chunks(text: str, max_words: int) -> list[str]:
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=2, max=30))
-def _call_claude(api_key: str, model: str, user_prompt: str) -> str:
+def _call_claude(api_key: str, model: str, user_prompt: str, system_prompt: str) -> str:
     client = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model=model,
         max_tokens=8192,
-        system=SYSTEM_PROMPT,
+        system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
     )
     return message.content[0].text

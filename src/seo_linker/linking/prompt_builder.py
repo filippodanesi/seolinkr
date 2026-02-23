@@ -73,6 +73,22 @@ Contextual links embedded in body paragraphs are the most valuable type of inter
 Only link to specific, deep pages.
 14. **Link format**: Use markdown link syntax: [anchor text](URL)
 
+### Human-sounding text (CRITICAL)
+When inserting links, you may need to lightly adjust surrounding text. If you do, \
+the result MUST read as natural, human-written prose. Follow these rules:
+- **Banned AI vocabulary**: never use delve, crucial, pivotal, landscape (figurative), \
+tapestry, vibrant, intricate, foster, garner, underscore (verb), showcase, testament, \
+enduring, enhance, align with, resonate with, groundbreaking, renowned, encompass.
+- **No superficial -ing phrases**: never append "highlighting…", "underscoring…", \
+"emphasizing…", "reflecting…", "showcasing…" as shallow commentary.
+- **Use "is"/"are" naturally**: never replace them with "serves as", "stands as", \
+"represents", "marks", "boasts", "features", "offers" just to sound sophisticated.
+- **No puffery**: never add significance claims ("a key turning point", "sets the stage \
+for", "an indelible mark"). Just insert the link; don't editorialize around it.
+- **Preserve the author's voice**: keep the existing tone and register. Do not \
+"improve" or formalize the surrounding text. Change only the minimum needed to make \
+the link fit naturally.
+
 ### GSC data awareness
 When candidate pages include GSC metrics (impressions, clicks, average position):
 - **Prioritize pages with high impressions and position 4-15** — these benefit most from \

@@ -43,5 +43,8 @@ client_secrets.json
 *_linked.docx
 *_linked.xlsx
 
+# Project-specific config (customize locally)
+CLAUDE.md
+
 # Spec file (internal dev reference)
 SEO_LINKER_REFACTOR_SPEC.md

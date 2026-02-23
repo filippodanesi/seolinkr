@@ -249,12 +249,16 @@ Tests cover:
 
 ## Internal Linking Rules
 
-See [CLAUDE.md](CLAUDE.md) for the complete internal linking ruleset that governs:
-- Minimum link targets (3 category + 1 magazine cross-link)
-- Anchor text requirements (descriptive, varied, never generic)
-- Placement rules (first link within 200 words, never in headings)
-- Market-specific domain restrictions
-- GSC-informed prioritization
+The tool works best when paired with a `CLAUDE.md` file that codifies your internal linking rules. Create one in your project root and customize it for your domain. It should cover:
+
+- **Link targets** — minimum category/blog links per article
+- **Anchor text** — descriptive, varied, never generic
+- **Placement** — first link within 200 words, never in headings, density limits
+- **Cross-linking** — blog articles linking to related blog articles
+- **Market-specific rules** — subdomain restrictions, locale-specific URLs
+- **GSC-informed prioritization** — which pages to prioritize based on search data
+
+The `audit` command validates articles against these rules. Adapt the thresholds in `src/seo_linker/audit/checker.py` to match your `CLAUDE.md`.
 
 ## License
 

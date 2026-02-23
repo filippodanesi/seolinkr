@@ -225,6 +225,7 @@ with tab_process:
                         gsc_site=gsc_site or None,
                         log_fn=_log,
                         brand_guidelines=_get_brand_guidelines(),
+                        gsc_client=_get_gsc_client() if gsc_site else None,
                     )
                     status.update(label="Pipeline completed!", state="complete")
 

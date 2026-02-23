@@ -42,6 +42,7 @@ def run_pipeline(
     gsc_site: str | None = None,
     log_fn: Callable[[str], None] | None = None,
     brand_guidelines: str | None = None,
+    gsc_client: object | None = None,
 ) -> LinkingResult:
     """Execute the full internal linking pipeline."""
     log_fn = log_fn or click.echo
@@ -110,13 +111,14 @@ def run_pipeline(
 
     # Step 4b: Enrich with GSC data (optional — zero API calls if cached)
     if gsc_site:
-        from seo_linker.gsc.client import GSCClient
-        gsc = GSCClient(
-            service_account_path=config.gsc_service_account or None,
-            oauth_client_secrets_path=config.gsc_oauth_secrets or None,
-            cache_ttl_hours=config.gsc_cache_ttl,
-        )
-        candidates = gsc.enrich_candidates(candidates, gsc_site)
+        if gsc_client is None:
+            from seo_linker.gsc.client import GSCClient
+            gsc_client = GSCClient(
+                service_account_path=config.gsc_service_account or None,
+                oauth_client_secrets_path=config.gsc_oauth_secrets or None,
+                cache_ttl_hours=config.gsc_cache_ttl,
+            )
+        candidates = gsc_client.enrich_candidates(candidates, gsc_site)
         enriched_gsc = sum(1 for p in candidates if p.impressions > 0)
         log_fn(f"  GSC data: {enriched_gsc}/{len(candidates)} pages with metrics")
 

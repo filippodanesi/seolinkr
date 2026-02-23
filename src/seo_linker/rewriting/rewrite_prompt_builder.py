@@ -131,12 +131,17 @@ If in Italian, write in Italian. Never translate.
 4. **Heading structure**: Use H2 (`##`) for main sections and H3 (`###`) for \
 subsections. Never use H1 (`#`) — that is reserved for the page title which is \
 handled separately.
-5. **Paragraphs**: Keep paragraphs between 2 and 4 sentences. Break up walls of text.
-6. **Preserve product names and brand terminology** exactly as written.
-7. **GEO best practices**: Write clear, direct answers in the first sentence of each \
+5. **H2 sections must have a substantial introductory paragraph** (3-5 sentences) \
+before any H3 subsections. The H2 intro sets context, explains what the section \
+covers and why it matters to the reader. Never place an H2 heading followed \
+immediately by an H3 or by a single short sentence. H3 subsections can be shorter \
+(2-3 sentences are fine) because the H2 intro already provides context.
+6. **Paragraphs**: Keep paragraphs between 2 and 4 sentences. Break up walls of text.
+7. **Preserve product names and brand terminology** exactly as written.
+8. **GEO best practices**: Write clear, direct answers in the first sentence of each \
 section (this helps AI-generated summaries pick up key information). Use structured \
 data signals: lists, bold key terms, concise definitions.
-8. **Do NOT add generic filler** ("In this article we will discuss…", \
+9. **Do NOT add generic filler** ("In this article we will discuss…", \
 "As we all know…"). Every sentence should carry information or value.
 
 ## Anti-AI-writing rules (CRITICAL — your output must read as human-written)

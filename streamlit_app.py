@@ -159,12 +159,13 @@ tab_process, tab_candidates, tab_audit, tab_gsc, tab_gaps = st.tabs(
 # ---- Tab 1: Process ------------------------------------------------------
 
 with tab_process:
-    st.subheader("Insert internal links into a document")
+    st.subheader("Insert internal links into documents")
 
-    uploaded = st.file_uploader(
-        "Upload a file (.md, .docx, .xlsx)",
+    uploaded_files = st.file_uploader(
+        "Upload one or more files (.md, .docx, .xlsx)",
         type=["md", "markdown", "docx", "xlsx"],
         key="process_upload",
+        accept_multiple_files=True,
     )
 
     sitemap_names = list(sitemaps.keys())
@@ -204,8 +205,8 @@ with tab_process:
         submitted = st.form_submit_button("Run Pipeline", type="primary")
 
     if submitted:
-        if not uploaded:
-            st.error("Please upload a file.")
+        if not uploaded_files:
+            st.error("Please upload at least one file.")
         else:
             sitemap_urls = [sitemaps[n] for n in selected_sitemaps]
             if extra_sitemap.strip():
@@ -214,81 +215,272 @@ with tab_process:
             if not sitemap_urls:
                 st.error("Select at least one sitemap.")
             else:
-                input_path = _save_upload(uploaded)
-                suffix = input_path.suffix
-                output_path = input_path.with_name(f"output_linked{suffix}")
-
                 cfg = _build_config()
-
                 from seo_linker.pipeline import PipelineError, run_pipeline
 
-                status = st.status("Running pipeline...", expanded=True)
-                log_area = status.empty()
-                log_lines: list[str] = []
-
-                def _log(msg: str) -> None:
-                    log_lines.append(msg)
-                    log_area.text("\n".join(log_lines))
-
-                # Map UI labels to pipeline values
                 ct_value = "rough_draft" if content_type == "Rough draft" else "existing_article"
+                is_bulk = len(uploaded_files) > 1
 
-                try:
-                    result = run_pipeline(
-                        input_path=input_path,
-                        sitemap_urls=sitemap_urls,
-                        output_path=output_path,
-                        max_links=cfg.max_links,
-                        top_n=cfg.top_n,
-                        model=cfg.default_model,
-                        current_url=current_url or None,
-                        config=cfg,
-                        gsc_site=gsc_site or None,
-                        log_fn=_log,
-                        brand_guidelines=_get_brand_guidelines(),
-                        gsc_client=_get_gsc_client() if gsc_site else None,
-                        enable_rewrite=enable_rewrite,
-                        content_type=ct_value,
-                        rewrite_instructions=rewrite_instructions.strip() or None,
-                    )
-                    status.update(label="Pipeline completed!", state="complete")
+                if is_bulk:
+                    # -------------------------------------------------------
+                    # Bulk mode: shared prep + sequential per-file processing
+                    # -------------------------------------------------------
+                    from seo_linker.models import TargetPage
+                    from seo_linker.sitemap.enricher import enrich_pages
+                    from seo_linker.sitemap.fetcher import fetch_sitemap
 
-                    # Store results in session_state so they persist across reruns
-                    with open(output_path, "rb") as f:
-                        st.session_state["process_result"] = {
-                            "insertions": [
-                                {"anchor_text": ins.anchor_text, "target_url": ins.target_url, "reasoning": ins.reasoning}
-                                for ins in result.insertions
-                            ],
-                            "rewritten_text": result.rewritten_text,
-                            "file_data": f.read(),
-                            "file_name": f"{Path(uploaded.name).stem}_linked{suffix}",
-                        }
-                except PipelineError as e:
-                    status.update(label="Pipeline failed", state="error")
-                    st.error(str(e))
+                    prep_status = st.status("Preparing shared resources...", expanded=True)
+                    prep_log_area = prep_status.empty()
+                    prep_lines: list[str] = []
+
+                    def _prep_log(msg: str) -> None:
+                        prep_lines.append(msg)
+                        prep_log_area.text("\n".join(prep_lines))
+
+                    try:
+                        pages: list[TargetPage] = []
+                        for sitemap_url in sitemap_urls:
+                            _prep_log(f"Fetching sitemap from {sitemap_url}...")
+                            sitemap_pages = fetch_sitemap(sitemap_url)
+                            _prep_log(f"  Found {len(sitemap_pages)} URLs")
+                            pages.extend(sitemap_pages)
+
+                        # Deduplicate
+                        seen: set[str] = set()
+                        unique: list[TargetPage] = []
+                        for p in pages:
+                            if p.url not in seen:
+                                seen.add(p.url)
+                                unique.append(p)
+                        pages = unique
+
+                        # Filter product pages
+                        before = len(pages)
+                        pages = [p for p in pages if not p.url.rstrip("/").endswith(".html")]
+                        if before != len(pages):
+                            _prep_log(f"  Filtered {before - len(pages)} product pages, {len(pages)} remaining")
+
+                        # Enrich once for all files
+                        _prep_log("Enriching pages with metadata...")
+                        pages = enrich_pages(pages, cfg.cache_ttl_hours)
+                        enriched_count = sum(1 for p in pages if p.title)
+                        _prep_log(f"  Enriched {enriched_count}/{len(pages)} pages")
+
+                        prep_status.update(label="Shared resources ready", state="complete")
+                    except Exception as e:
+                        prep_status.update(label="Preparation failed", state="error")
+                        st.error(f"Failed to prepare shared resources: {e}")
+                        st.stop()
+
+                    # Create GSC client once for all files
+                    gsc_client = _get_gsc_client() if gsc_site else None
+
+                    progress = st.progress(0, text="Starting bulk processing...")
+                    all_results: list[dict] = []
+
+                    for i, uf in enumerate(uploaded_files):
+                        progress.progress(
+                            i / len(uploaded_files),
+                            text=f"Processing {uf.name} ({i + 1}/{len(uploaded_files)})...",
+                        )
+
+                        file_status = st.status(f"Processing {uf.name}...", expanded=False)
+                        file_log_area = file_status.empty()
+                        file_lines: list[str] = []
+
+                        def _file_log(msg: str, _lines=file_lines, _area=file_log_area) -> None:
+                            _lines.append(msg)
+                            _area.text("\n".join(_lines))
+
+                        try:
+                            input_path = _save_upload(uf)
+                            suffix = input_path.suffix
+                            output_path = input_path.with_name(f"output_linked_{i}{suffix}")
+
+                            result = run_pipeline(
+                                input_path=input_path,
+                                sitemap_urls=sitemap_urls,
+                                output_path=output_path,
+                                max_links=cfg.max_links,
+                                top_n=cfg.top_n,
+                                model=cfg.default_model,
+                                current_url=None,
+                                config=cfg,
+                                gsc_site=gsc_site or None,
+                                log_fn=_file_log,
+                                brand_guidelines=_get_brand_guidelines(),
+                                gsc_client=gsc_client,
+                                enable_rewrite=enable_rewrite,
+                                content_type=ct_value,
+                                rewrite_instructions=rewrite_instructions.strip() or None,
+                                prefetched_pages=pages,
+                            )
+
+                            with open(output_path, "rb") as f:
+                                file_data = f.read()
+
+                            all_results.append({
+                                "file_name": f"{Path(uf.name).stem}_linked{suffix}",
+                                "file_data": file_data,
+                                "insertions": [
+                                    {"anchor_text": ins.anchor_text, "target_url": ins.target_url, "reasoning": ins.reasoning}
+                                    for ins in result.insertions
+                                ],
+                                "rewritten_text": result.rewritten_text,
+                                "error": None,
+                            })
+
+                            file_status.update(
+                                label=f"{uf.name} — {len(result.insertions)} links inserted",
+                                state="complete",
+                            )
+                        except Exception as e:
+                            all_results.append({
+                                "file_name": uf.name,
+                                "file_data": None,
+                                "insertions": [],
+                                "rewritten_text": "",
+                                "error": str(e),
+                            })
+                            file_status.update(label=f"{uf.name} — FAILED", state="error")
+
+                        # Rate-limit safety: pause between Anthropic API calls
+                        if i < len(uploaded_files) - 1:
+                            import time
+                            time.sleep(1)
+
+                    progress.progress(1.0, text="All files processed!")
+
+                    st.session_state["process_result"] = {
+                        "is_bulk": True,
+                        "results": all_results,
+                    }
+
+                else:
+                    # -------------------------------------------------------
+                    # Single file (original flow, unchanged)
+                    # -------------------------------------------------------
+                    uploaded = uploaded_files[0]
+                    input_path = _save_upload(uploaded)
+                    suffix = input_path.suffix
+                    output_path = input_path.with_name(f"output_linked{suffix}")
+
+                    status = st.status("Running pipeline...", expanded=True)
+                    log_area = status.empty()
+                    log_lines: list[str] = []
+
+                    def _log(msg: str) -> None:
+                        log_lines.append(msg)
+                        log_area.text("\n".join(log_lines))
+
+                    try:
+                        result = run_pipeline(
+                            input_path=input_path,
+                            sitemap_urls=sitemap_urls,
+                            output_path=output_path,
+                            max_links=cfg.max_links,
+                            top_n=cfg.top_n,
+                            model=cfg.default_model,
+                            current_url=current_url or None,
+                            config=cfg,
+                            gsc_site=gsc_site or None,
+                            log_fn=_log,
+                            brand_guidelines=_get_brand_guidelines(),
+                            gsc_client=_get_gsc_client() if gsc_site else None,
+                            enable_rewrite=enable_rewrite,
+                            content_type=ct_value,
+                            rewrite_instructions=rewrite_instructions.strip() or None,
+                        )
+                        status.update(label="Pipeline completed!", state="complete")
+
+                        with open(output_path, "rb") as f:
+                            st.session_state["process_result"] = {
+                                "is_bulk": False,
+                                "results": [{
+                                    "file_name": f"{Path(uploaded.name).stem}_linked{suffix}",
+                                    "file_data": f.read(),
+                                    "insertions": [
+                                        {"anchor_text": ins.anchor_text, "target_url": ins.target_url, "reasoning": ins.reasoning}
+                                        for ins in result.insertions
+                                    ],
+                                    "rewritten_text": result.rewritten_text,
+                                    "error": None,
+                                }],
+                            }
+                    except PipelineError as e:
+                        status.update(label="Pipeline failed", state="error")
+                        st.error(str(e))
 
     # Display results from session_state (persists across reruns)
     if "process_result" in st.session_state:
         pr = st.session_state["process_result"]
 
-        st.success(f"Inserted **{len(pr['insertions'])}** links")
+        if pr.get("is_bulk"):
+            results = pr["results"]
+            ok = [r for r in results if not r["error"]]
+            failed = [r for r in results if r["error"]]
+            total_links = sum(len(r["insertions"]) for r in ok)
 
-        if pr["rewritten_text"]:
-            with st.expander("View rewritten content (before linking)"):
-                st.markdown(pr["rewritten_text"])
+            st.success(f"Processed **{len(ok)}/{len(results)}** files — **{total_links}** links inserted total")
 
-        if pr["insertions"]:
-            st.markdown("**Link report:**")
-            for ins in pr["insertions"]:
-                st.markdown(f"- [{ins['anchor_text']}]({ins['target_url']}) — {ins['reasoning']}")
+            if failed:
+                for r in failed:
+                    st.error(f"**{r['file_name']}**: {r['error']}")
 
-        st.download_button(
-            label=f"Download {pr['file_name']}",
-            data=pr["file_data"],
-            file_name=pr["file_name"],
-            mime="application/octet-stream",
-        )
+            for r in ok:
+                with st.expander(f"{r['file_name']} — {len(r['insertions'])} links"):
+                    if r["rewritten_text"]:
+                        st.markdown("**Rewritten content (before linking):**")
+                        st.markdown(r["rewritten_text"][:500] + "...")
+                    if r["insertions"]:
+                        for ins in r["insertions"]:
+                            st.markdown(f"- [{ins['anchor_text']}]({ins['target_url']}) — {ins['reasoning']}")
+                    st.download_button(
+                        f"Download {r['file_name']}",
+                        data=r["file_data"],
+                        file_name=r["file_name"],
+                        mime="application/octet-stream",
+                        key=f"dl_{r['file_name']}",
+                    )
+
+            # ZIP download for all successful files
+            if len(ok) > 1:
+                import io
+                import zipfile
+
+                zip_buf = io.BytesIO()
+                with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for r in ok:
+                        zf.writestr(r["file_name"], r["file_data"])
+                zip_buf.seek(0)
+
+                st.download_button(
+                    "Download all as ZIP",
+                    data=zip_buf.getvalue(),
+                    file_name="linked_files.zip",
+                    mime="application/zip",
+                    key="dl_bulk_zip",
+                )
+
+        else:
+            r = pr["results"][0]
+            st.success(f"Inserted **{len(r['insertions'])}** links")
+
+            if r["rewritten_text"]:
+                with st.expander("View rewritten content (before linking)"):
+                    st.markdown(r["rewritten_text"])
+
+            if r["insertions"]:
+                st.markdown("**Link report:**")
+                for ins in r["insertions"]:
+                    st.markdown(f"- [{ins['anchor_text']}]({ins['target_url']}) — {ins['reasoning']}")
+
+            st.download_button(
+                label=f"Download {r['file_name']}",
+                data=r["file_data"],
+                file_name=r["file_name"],
+                mime="application/octet-stream",
+            )
 
 # ---- Tab 2: Candidates ---------------------------------------------------
 

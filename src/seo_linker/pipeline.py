@@ -46,6 +46,7 @@ def run_pipeline(
     enable_rewrite: bool = False,
     content_type: str = "existing_article",
     rewrite_instructions: str | None = None,
+    prefetched_pages: list[TargetPage] | None = None,
 ) -> LinkingResult:
     """Execute the full internal linking pipeline."""
     log_fn = log_fn or click.echo
@@ -91,40 +92,45 @@ def run_pipeline(
         rewritten_words = len(rewritten_text.split())
         log_fn(f"  Rewrite complete: ~{rewritten_words} words")
 
-    # Step 2: Fetch sitemaps (merge all)
-    pages: list[TargetPage] = []
-    for sitemap_url in sitemap_urls:
-        log_fn(f"Fetching sitemap from {sitemap_url}...")
-        sitemap_pages = fetch_sitemap(sitemap_url)
-        log_fn(f"  Found {len(sitemap_pages)} URLs")
-        pages.extend(sitemap_pages)
+    if prefetched_pages is not None:
+        # Bulk mode: pages already fetched, filtered, and enriched
+        pages = prefetched_pages
+        log_fn(f"Using {len(pages)} pre-fetched pages (bulk mode)")
+    else:
+        # Step 2: Fetch sitemaps (merge all)
+        pages: list[TargetPage] = []
+        for sitemap_url in sitemap_urls:
+            log_fn(f"Fetching sitemap from {sitemap_url}...")
+            sitemap_pages = fetch_sitemap(sitemap_url)
+            log_fn(f"  Found {len(sitemap_pages)} URLs")
+            pages.extend(sitemap_pages)
 
-    # Deduplicate by URL
-    seen: set[str] = set()
-    unique_pages: list[TargetPage] = []
-    for p in pages:
-        if p.url not in seen:
-            seen.add(p.url)
-            unique_pages.append(p)
-    pages = unique_pages
+        # Deduplicate by URL
+        seen: set[str] = set()
+        unique_pages: list[TargetPage] = []
+        for p in pages:
+            if p.url not in seen:
+                seen.add(p.url)
+                unique_pages.append(p)
+        pages = unique_pages
 
-    if len(sitemap_urls) > 1:
-        log_fn(f"  Total unique URLs across {len(sitemap_urls)} sitemaps: {len(pages)}")
+        if len(sitemap_urls) > 1:
+            log_fn(f"  Total unique URLs across {len(sitemap_urls)} sitemaps: {len(pages)}")
 
-    if not pages:
-        raise PipelineError("No URLs found in sitemaps.")
+        if not pages:
+            raise PipelineError("No URLs found in sitemaps.")
 
-    # Step 2b: Filter out product pages (.html) — keep categories, magazine, landing pages
-    before_filter = len(pages)
-    pages = [p for p in pages if not p.url.rstrip("/").endswith(".html")]
-    if before_filter != len(pages):
-        log_fn(f"  Filtered out {before_filter - len(pages)} product pages (.html), {len(pages)} remaining")
+        # Step 2b: Filter out product pages (.html) — keep categories, magazine, landing pages
+        before_filter = len(pages)
+        pages = [p for p in pages if not p.url.rstrip("/").endswith(".html")]
+        if before_filter != len(pages):
+            log_fn(f"  Filtered out {before_filter - len(pages)} product pages (.html), {len(pages)} remaining")
 
-    # Step 3: Enrich pages with metadata
-    log_fn("Enriching pages with title & meta description...")
-    pages = enrich_pages(pages, config.cache_ttl_hours)
-    enriched = sum(1 for p in pages if p.title)
-    log_fn(f"  Enriched {enriched}/{len(pages)} pages")
+        # Step 3: Enrich pages with metadata
+        log_fn("Enriching pages with title & meta description...")
+        pages = enrich_pages(pages, config.cache_ttl_hours)
+        enriched = sum(1 for p in pages if p.title)
+        log_fn(f"  Enriched {enriched}/{len(pages)} pages")
 
     # Step 4: Pre-filter with embeddings
     log_fn(f"Pre-filtering to top {top_n} candidates via embeddings...")

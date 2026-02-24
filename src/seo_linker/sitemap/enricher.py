@@ -97,12 +97,14 @@ async def _enrich_one(
     idx: int,
     accept_lang: str,
 ) -> TargetPage:
-    # Check cache first
+    # Check cache first (require "h1" key to invalidate old entries missing new fields)
     cached = _read_cache(page.url, cache_ttl_hours)
-    if cached:
+    if cached and "h1" in cached:
         page.title = cached.get("title", "")
         page.meta_description = cached.get("meta_description", "")
         page.body_text = cached.get("body_text", "")
+        page.h1 = cached.get("h1", "")
+        page.headings = cached.get("headings", [])
         return page
 
     async with sem:
@@ -122,22 +124,35 @@ async def _enrich_one(
     if meta_desc and meta_desc.get("content"):
         page.meta_description = str(meta_desc["content"]).strip()
 
-    # Fallback: if no title from <title> tag, try og:title or <h1>
+    # Extract H1 explicitly (before body text extraction which decomposes elements)
+    h1_tag = soup.find("h1")
+    if h1_tag and h1_tag.get_text(strip=True):
+        page.h1 = h1_tag.get_text(strip=True)
+
+    # Fallback: if no title from <title> tag, try og:title or H1
     if not page.title:
         og_title = soup.find("meta", attrs={"property": "og:title"})
         if og_title and og_title.get("content"):
             page.title = _clean_title(str(og_title["content"]).strip())
 
-    if not page.title:
-        h1 = soup.find("h1")
-        if h1 and h1.get_text(strip=True):
-            page.title = h1.get_text(strip=True)
+    if not page.title and page.h1:
+        page.title = page.h1
 
     # Fallback: if no meta description, try og:description
     if not page.meta_description:
         og_desc = soup.find("meta", attrs={"property": "og:description"})
         if og_desc and og_desc.get("content"):
             page.meta_description = str(og_desc["content"]).strip()
+
+    # Extract H2/H3 headings from main content area
+    main_el = soup.find("main") or soup.find(attrs={"role": "main"}) or soup.find("article")
+    heading_source = main_el if main_el else (soup.body if soup.body else soup)
+    page.headings = []
+    for tag in heading_source.find_all(["h2", "h3"]):
+        text = tag.get_text(strip=True)
+        if text and len(text) > 3:
+            page.headings.append(text)
+    page.headings = page.headings[:20]
 
     # Extract main body text for richer embeddings
     page.body_text = _extract_body_text(soup)
@@ -148,6 +163,8 @@ async def _enrich_one(
             "title": page.title,
             "meta_description": page.meta_description,
             "body_text": page.body_text,
+            "h1": page.h1,
+            "headings": page.headings,
         },
     )
     return page

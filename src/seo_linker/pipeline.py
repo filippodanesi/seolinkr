@@ -132,12 +132,7 @@ def run_pipeline(
         enriched = sum(1 for p in pages if p.title)
         log_fn(f"  Enriched {enriched}/{len(pages)} pages")
 
-    # Step 4: Pre-filter with embeddings
-    log_fn(f"Pre-filtering to top {top_n} candidates via embeddings...")
-    candidates = prefilter_pages(sections, pages, top_n, config.embedding_model)
-    log_fn(f"  Selected {len(candidates)} candidate pages")
-
-    # Step 4b: Enrich with GSC data (optional — zero API calls if cached)
+    # GSC: enrich ALL pages before prefilter (multi-signal scoring uses GSC data)
     if gsc_site:
         if gsc_client is None:
             from seo_linker.gsc.client import GSCClient
@@ -146,9 +141,14 @@ def run_pipeline(
                 oauth_client_secrets_path=config.gsc_oauth_secrets or None,
                 cache_ttl_hours=config.gsc_cache_ttl,
             )
-        candidates = gsc_client.enrich_candidates(candidates, gsc_site)
-        enriched_gsc = sum(1 for p in candidates if p.impressions > 0)
-        log_fn(f"  GSC data: {enriched_gsc}/{len(candidates)} pages with metrics")
+        pages = gsc_client.enrich_candidates(pages, gsc_site)
+        enriched_gsc = sum(1 for p in pages if p.impressions > 0)
+        log_fn(f"  GSC data: {enriched_gsc}/{len(pages)} pages with metrics")
+
+    # Pre-filter with multi-signal scoring (embedding + URL taxonomy + GSC + headings)
+    log_fn(f"Pre-filtering to top {top_n} candidates via multi-signal scoring...")
+    candidates = prefilter_pages(sections, pages, top_n, config.embedding_model)
+    log_fn(f"  Selected {len(candidates)} candidate pages")
 
     # Step 5: Claude linking
     log_fn(f"Sending to Claude ({model}) for semantic link insertion...")

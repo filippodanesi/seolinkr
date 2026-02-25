@@ -6,9 +6,11 @@ Built for multi-market e-commerce content workflows.
 
 ## Features
 
-- **Embedding-based candidate matching** — multilingual sentence embeddings (`intfloat/multilingual-e5-small`) identify the most semantically relevant pages from your sitemap
+- **Multi-signal candidate scoring** — combines embedding similarity (50%), URL taxonomy overlap (20%), GSC opportunity boost (20%), and heading topic coverage (10%) for precise candidate selection
+- **Rich page enrichment** — extracts H1, H2/H3 headings, meta description, and body text from target pages; URL path is parsed into semantic taxonomy tokens
 - **Claude-powered link insertion** — Claude reads the article, selects natural anchor text, and inserts markdown links with reasoning for each placement
-- **Google Search Console integration** — optional GSC data enriches candidates with impressions, clicks, and position to prioritize pages that benefit most from link equity
+- **Google Search Console integration** — GSC data enriches candidates before pre-filtering, so search metrics (impressions, position, opportunity score) directly influence candidate selection
+- **Bulk processing** — upload multiple files at once; sitemaps, page enrichment, and GSC data are fetched once and reused across all files with rate-limit pauses between API calls
 - **Atomic CLI commands** — composable pipeline (`candidates` → `link` → `audit`) that can be orchestrated by Claude Code or used individually
 - **Cross-link detection** — finds linking opportunities between blog articles based on shared GSC search queries
 - **Link audit** — validates output against configurable rules (minimum links, anchor text quality, heading restrictions, duplicate URLs)
@@ -48,7 +50,7 @@ seo-linker config --gsc-service-account /path/to/service-account.json
 seo-linker process article.md --sitemap my-site --max-links 10
 ```
 
-This runs the full pipeline: parse → fetch sitemap → enrich pages → embedding prefilter → Claude linking → write output.
+This runs the full pipeline: parse → fetch sitemap → enrich pages (H1, headings, metadata) → GSC enrichment → multi-signal prefilter → Claude linking → write output.
 
 Output: `article_linked.md`
 
@@ -99,6 +101,7 @@ seo-linker audit article_linked.md --format json
 Google Search Console data adds an intelligence layer to candidate scoring:
 
 - **Opportunity scoring** — pages with high impressions at position 4-15 get the highest scores (link equity can push them to top 3)
+- **Pre-filter integration** — GSC metrics are applied before candidate selection, boosting "striking distance" pages in the multi-signal scoring formula
 - **Cross-link detection** — finds pairs of blog articles that share search queries, indicating they should link to each other
 - **Zero-cost enrichment** — GSC data is fetched in bulk (max 2 API calls per site), cached for 48 hours, and enrichment uses local lookup only
 
@@ -208,11 +211,11 @@ src/seo_linker/
 │   └── prompt_builder.py     # System + user prompt construction
 ├── matching/
 │   ├── embeddings.py         # SentenceTransformer wrapper
-│   └── prefilter.py          # Cosine similarity pre-filtering
+│   └── prefilter.py          # Multi-signal scoring (embeddings + URL taxonomy + GSC + headings)
 ├── parsers/                  # MD, DOCX, XLSX input parsers
 ├── sitemap/
 │   ├── fetcher.py            # Recursive XML sitemap fetch
-│   └── enricher.py           # Async page metadata enrichment
+│   └── enricher.py           # Async page metadata + H1/headings enrichment
 └── writers/                  # MD, DOCX, XLSX output writers
 ```
 

@@ -381,18 +381,19 @@ with tab_process:
                             })
                             file_status.update(label=f"{uf.name} — FAILED", state="error")
 
+                        # Save after each file so partial results survive session resets
+                        st.session_state["process_result"] = {
+                            "is_bulk": True,
+                            "results": list(all_results),
+                        }
+                        _save_results_to_disk(st.session_state["process_result"])
+
                         # Rate-limit safety: pause between Anthropic API calls
                         if i < len(uploaded_files) - 1:
                             import time
                             time.sleep(1)
 
                     progress.progress(1.0, text="All files processed!")
-
-                    st.session_state["process_result"] = {
-                        "is_bulk": True,
-                        "results": all_results,
-                    }
-                    _save_results_to_disk(st.session_state["process_result"])
 
                 else:
                     # -------------------------------------------------------
@@ -459,6 +460,13 @@ with tab_process:
 
     # Display results from session_state (persists across reruns)
     if "process_result" in st.session_state:
+        if st.button("Clear results", key="clear_results"):
+            del st.session_state["process_result"]
+            disk_path = RESULTS_DIR / "latest.json"
+            if disk_path.exists():
+                disk_path.unlink()
+            st.rerun()
+
         pr = st.session_state["process_result"]
 
         if pr.get("is_bulk"):

@@ -1,7 +1,6 @@
 [server]
 maxUploadSize = 50
 enableWebsocketCompression = false
-disconnectedSessionTtl = 1800
 
 [theme]
 primaryColor = "#FF4B4B"

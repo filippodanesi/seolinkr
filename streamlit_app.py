@@ -2,12 +2,49 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
 import streamlit as st
+
+# ---------------------------------------------------------------------------
+# Helpers: persist/restore results to survive session resets
+# ---------------------------------------------------------------------------
+
+RESULTS_DIR = Path.home() / ".seo-linker" / "results"
+
+
+def _save_results_to_disk(process_result: dict) -> None:
+    """Persist process results to disk so they survive session resets."""
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    serializable = {
+        "is_bulk": process_result["is_bulk"],
+        "results": [],
+    }
+    for r in process_result["results"]:
+        entry = dict(r)
+        if entry.get("file_data"):
+            entry["file_data"] = base64.b64encode(entry["file_data"]).decode("ascii")
+        serializable["results"].append(entry)
+    (RESULTS_DIR / "latest.json").write_text(json.dumps(serializable, indent=2))
+
+
+def _load_results_from_disk() -> dict | None:
+    """Load persisted results from disk, or None if unavailable."""
+    path = RESULTS_DIR / "latest.json"
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+        for r in data["results"]:
+            if r.get("file_data"):
+                r["file_data"] = base64.b64decode(r["file_data"])
+        return data
+    except Exception:
+        return None
 
 # ---------------------------------------------------------------------------
 # Helpers: config from st.secrets
@@ -355,6 +392,7 @@ with tab_process:
                         "is_bulk": True,
                         "results": all_results,
                     }
+                    _save_results_to_disk(st.session_state["process_result"])
 
                 else:
                     # -------------------------------------------------------
@@ -407,9 +445,17 @@ with tab_process:
                                     "error": None,
                                 }],
                             }
+                            _save_results_to_disk(st.session_state["process_result"])
                     except PipelineError as e:
                         status.update(label="Pipeline failed", state="error")
                         st.error(str(e))
+
+    # Restore results from disk if the session was reset (e.g. tab switch)
+    if "process_result" not in st.session_state:
+        _restored = _load_results_from_disk()
+        if _restored:
+            st.session_state["process_result"] = _restored
+            st.info("Results restored from a previous session.")
 
     # Display results from session_state (persists across reruns)
     if "process_result" in st.session_state:

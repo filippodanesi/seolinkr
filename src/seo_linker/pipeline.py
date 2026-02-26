@@ -47,6 +47,8 @@ def run_pipeline(
     content_type: str = "existing_article",
     rewrite_instructions: str | None = None,
     prefetched_pages: list[TargetPage] | None = None,
+    generate_html: bool = False,
+    brand_name: str = "Triumph®",
 ) -> LinkingResult:
     """Execute the full internal linking pipeline."""
     log_fn = log_fn or click.echo
@@ -168,6 +170,26 @@ def run_pipeline(
 
     writer.write(result, input_path, output_path)
     log_fn(f"Output written to {output_path}")
+
+    # Step 7: Generate HTML output (optional)
+    if generate_html:
+        from seo_linker.html.generator import generate_html_output
+
+        html_text, meta = generate_html_output(
+            linked_text=result.linked_text,
+            candidates=candidates,
+            api_key=config.api_key,
+            model=model,
+            brand_name=brand_name,
+            log_fn=log_fn,
+        )
+        result.html_output = html_text
+        result.seo_title = meta["title"]
+        result.seo_meta_description = meta["meta_description"]
+
+        html_path = output_path.with_suffix(".txt")
+        html_path.write_text(html_text, encoding="utf-8")
+        log_fn(f"HTML output written to {html_path}")
 
     # Print report
     if result.insertions:

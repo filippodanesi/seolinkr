@@ -239,6 +239,13 @@ with tab_process:
                 height=80,
             )
 
+        st.divider()
+        html_col1, html_col2 = st.columns(2)
+        with html_col1:
+            generate_html = st.checkbox("Generate HTML output (.txt)", value=True)
+        with html_col2:
+            brand_name = st.text_input("Brand name (for title tag)", value="Triumph®")
+
         submitted = st.form_submit_button("Run Pipeline", type="primary")
 
     if submitted:
@@ -351,12 +358,14 @@ with tab_process:
                                 content_type=ct_value,
                                 rewrite_instructions=rewrite_instructions.strip() or None,
                                 prefetched_pages=pages,
+                                generate_html=generate_html,
+                                brand_name=brand_name,
                             )
 
                             with open(output_path, "rb") as f:
                                 file_data = f.read()
 
-                            all_results.append({
+                            entry = {
                                 "file_name": f"{Path(uf.name).stem}_linked{suffix}",
                                 "file_data": file_data,
                                 "insertions": [
@@ -365,7 +374,11 @@ with tab_process:
                                 ],
                                 "rewritten_text": result.rewritten_text,
                                 "error": None,
-                            })
+                                "html_output": result.html_output or None,
+                                "seo_title": result.seo_title,
+                                "seo_meta_description": result.seo_meta_description,
+                            }
+                            all_results.append(entry)
 
                             file_status.update(
                                 label=f"{uf.name} — {len(result.insertions)} links inserted",
@@ -429,6 +442,8 @@ with tab_process:
                             enable_rewrite=enable_rewrite,
                             content_type=ct_value,
                             rewrite_instructions=rewrite_instructions.strip() or None,
+                            generate_html=generate_html,
+                            brand_name=brand_name,
                         )
                         status.update(label="Pipeline completed!", state="complete")
 
@@ -444,6 +459,9 @@ with tab_process:
                                     ],
                                     "rewritten_text": result.rewritten_text,
                                     "error": None,
+                                    "html_output": result.html_output or None,
+                                    "seo_title": result.seo_title,
+                                    "seo_meta_description": result.seo_meta_description,
                                 }],
                             }
                             _save_results_to_disk(st.session_state["process_result"])
@@ -483,19 +501,35 @@ with tab_process:
 
             for r in ok:
                 with st.expander(f"{r['file_name']} — {len(r['insertions'])} links"):
+                    if r.get("seo_title"):
+                        st.markdown(f"**Title:** {r['seo_title']}")
+                    if r.get("seo_meta_description"):
+                        st.markdown(f"**Meta:** {r['seo_meta_description']}")
                     if r["rewritten_text"]:
                         st.markdown("**Rewritten content (before linking):**")
                         st.markdown(r["rewritten_text"][:500] + "...")
                     if r["insertions"]:
                         for ins in r["insertions"]:
                             st.markdown(f"- [{ins['anchor_text']}]({ins['target_url']}) — {ins['reasoning']}")
-                    st.download_button(
-                        f"Download {r['file_name']}",
-                        data=r["file_data"],
-                        file_name=r["file_name"],
-                        mime="application/octet-stream",
-                        key=f"dl_{r['file_name']}",
-                    )
+                    dl_col1, dl_col2 = st.columns(2)
+                    with dl_col1:
+                        st.download_button(
+                            f"Download {r['file_name']}",
+                            data=r["file_data"],
+                            file_name=r["file_name"],
+                            mime="application/octet-stream",
+                            key=f"dl_{r['file_name']}",
+                        )
+                    with dl_col2:
+                        if r.get("html_output"):
+                            html_name = Path(r["file_name"]).stem + ".txt"
+                            st.download_button(
+                                f"Download HTML ({html_name})",
+                                data=r["html_output"],
+                                file_name=html_name,
+                                mime="text/plain",
+                                key=f"dl_html_{r['file_name']}",
+                            )
 
             # ZIP download for all successful files
             if len(ok) > 1:
@@ -506,6 +540,9 @@ with tab_process:
                 with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for r in ok:
                         zf.writestr(r["file_name"], r["file_data"])
+                        if r.get("html_output"):
+                            html_name = Path(r["file_name"]).stem + ".txt"
+                            zf.writestr(html_name, r["html_output"])
                 zip_buf.seek(0)
 
                 st.download_button(
@@ -520,6 +557,11 @@ with tab_process:
             r = pr["results"][0]
             st.success(f"Inserted **{len(r['insertions'])}** links")
 
+            if r.get("seo_title"):
+                st.markdown(f"**Title:** {r['seo_title']}")
+            if r.get("seo_meta_description"):
+                st.markdown(f"**Meta:** {r['seo_meta_description']}")
+
             if r["rewritten_text"]:
                 with st.expander("View rewritten content (before linking)"):
                     st.markdown(r["rewritten_text"])
@@ -529,12 +571,23 @@ with tab_process:
                 for ins in r["insertions"]:
                     st.markdown(f"- [{ins['anchor_text']}]({ins['target_url']}) — {ins['reasoning']}")
 
-            st.download_button(
-                label=f"Download {r['file_name']}",
-                data=r["file_data"],
-                file_name=r["file_name"],
-                mime="application/octet-stream",
-            )
+            dl_col1, dl_col2 = st.columns(2)
+            with dl_col1:
+                st.download_button(
+                    label=f"Download {r['file_name']}",
+                    data=r["file_data"],
+                    file_name=r["file_name"],
+                    mime="application/octet-stream",
+                )
+            with dl_col2:
+                if r.get("html_output"):
+                    html_name = Path(r["file_name"]).stem + ".txt"
+                    st.download_button(
+                        f"Download HTML ({html_name})",
+                        data=r["html_output"],
+                        file_name=html_name,
+                        mime="text/plain",
+                    )
 
 # ---- Tab 2: Candidates ---------------------------------------------------
 

@@ -32,11 +32,12 @@ env/
 .DS_Store
 Thumbs.db
 
-# Credentials — NEVER commit
+# Credentials & brand config — NEVER commit
 service-account.json
 client_secrets.json
 **/gsc_token.json
 .streamlit/secrets.toml
+brand_guidelines.md
 
 # Sample content files
 *.md.bak
@@ -44,6 +45,11 @@ client_secrets.json
 *_linked.docx
 *_linked.xlsx
 
+
+# Node.js / Next.js
+node_modules/
+web/.next/
+web/out/
 
 # Spec file (internal dev reference)
 SEO_LINKER_REFACTOR_SPEC.md

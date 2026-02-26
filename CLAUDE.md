@@ -57,3 +57,63 @@ These rules govern how internal links are placed, what they point to, and how an
 - [ ] Are there zero links inside headings?
 - [ ] Do all links point to the correct market subdomain?
 - [ ] Has the article passed `seo-linker audit --format json`?
+
+---
+
+## 18. DEVELOPMENT RULES
+
+Architecture boundaries, API conventions, and testing rules for the v0.4.0 codebase.
+
+### 18.1 Architecture
+
+```
+src/seo_linker/   → Core engine (CLI, models, pipeline, matching, audit, GSC, parsers, writers)
+api/              → FastAPI backend (thin layer over core engine)
+web/              → Next.js + shadcn/UI frontend
+.claude/commands/ → Claude Code slash commands
+```
+
+- **Core engine is the source of truth.** All business logic lives in `src/seo_linker/`. The API and frontend are consumers.
+- **Never duplicate core logic** in `api/` or `web/`. API routes call core functions directly.
+- **The CLI (`seo-linker`) must remain fully functional** independently of the API/frontend.
+- **Embeddings use HuggingFace Inference API** (not local models). Requires `HF_TOKEN` env var.
+
+### 18.2 API conventions
+
+- All API routes live under `/api/` prefix
+- File uploads use `multipart/form-data` with temp file cleanup in `finally` blocks
+- Pipeline progress uses Server-Sent Events (SSE) via `asyncio.Queue`
+- Responses use `dataclasses.asdict()` to serialize core models — field names match Python dataclass fields
+- CORS is configured for `localhost:3000` (Next.js dev server)
+
+### 18.3 Frontend conventions
+
+- Next.js App Router with TypeScript
+- shadcn/UI components in `web/src/components/ui/`
+- Custom components in `web/src/components/`
+- API client in `web/src/lib/api.ts` — all fetch calls go through typed helpers
+- TypeScript interfaces in `web/src/lib/types.ts` — must mirror Python models
+- Pages follow the pattern: file upload → API call → display results
+
+### 18.4 Testing rules
+
+- `pytest tests/ -v` must pass after any change to `src/seo_linker/`
+- API routes can be tested with `curl` or `httpx` against running server
+- Frontend builds must pass `npm run build` in `web/`
+- Never commit code that breaks the CLI (`seo-linker --version` must work)
+
+### 18.5 Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes | Claude API key for linking and rewriting |
+| `HF_TOKEN` | Yes (for embeddings) | HuggingFace Inference API token |
+
+### 18.6 Slash commands
+
+Available Claude Code commands for CLI-driven workflows:
+
+- `/link-article` — Process a single article through the full pipeline
+- `/link-batch` — Batch process a directory of articles
+- `/audit-batch` — Batch audit all `*_linked.md` files
+- `/gsc-report` — GSC intelligence report with opportunities + cross-gaps

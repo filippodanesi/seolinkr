@@ -1,3 +1,4 @@
+// Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 "use client";
 
 import { useRef, useEffect } from "react";

@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """HuggingFace Inference API wrapper for generating embeddings."""
 
 from __future__ import annotations

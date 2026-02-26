@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """FastAPI application — thin API layer over the SEO linker core engine."""
 
 from __future__ import annotations

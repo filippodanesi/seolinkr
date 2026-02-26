@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Markdown writer — simply writes the linked text."""
 
 from __future__ import annotations

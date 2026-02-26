@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """DOCX writer — inserts hyperlinks via python-docx XML manipulation."""
 
 from __future__ import annotations

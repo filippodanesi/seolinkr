@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Click CLI for the SEO internal linking tool."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Main pipeline orchestrator."""
 
 from __future__ import annotations

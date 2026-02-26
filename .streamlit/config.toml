@@ -1,6 +1,0 @@
-[server]
-maxUploadSize = 50
-enableWebsocketCompression = false
-
-[theme]
-primaryColor = "#FF4B4B"

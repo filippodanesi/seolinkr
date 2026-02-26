@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Configuration management for SEO linker."""
 
 from __future__ import annotations

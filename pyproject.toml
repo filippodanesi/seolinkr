@@ -3,9 +3,11 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "seo-internal-linking"
+name = "seolinkr"
 version = "0.4.0"
 description = "CLI tool for automated SEO internal linking using embeddings and Claude API"
+license = {text = "Proprietary"}
+authors = [{name = "Filippo Danesi", email = "filippo.danesi93@gmail.com"}]
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.1",

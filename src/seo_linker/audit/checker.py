@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Audit an article's internal links against CLAUDE.md rules."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+// Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768

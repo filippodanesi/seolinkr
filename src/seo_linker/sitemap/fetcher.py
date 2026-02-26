@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Fetch and parse sitemap XML, handling sitemap index and gzip."""
 
 from __future__ import annotations

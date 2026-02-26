@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Build system and user prompts for content rewriting/optimization."""
 
 from __future__ import annotations

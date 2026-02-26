@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Cross-link intelligence — finds linking opportunities between blog articles based on shared GSC queries."""
 
 from __future__ import annotations

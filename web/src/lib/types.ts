@@ -1,3 +1,4 @@
+// Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 /* TypeScript interfaces mirroring Python data models. */
 
 export interface AuditIssue {

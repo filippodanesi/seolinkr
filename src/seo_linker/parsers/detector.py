@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Auto-detect file format and return the appropriate parser."""
 
 from __future__ import annotations

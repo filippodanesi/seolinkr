@@ -1,7 +1,9 @@
 {
-  "name": "web",
-  "version": "0.1.0",
+  "name": "seolinkr-web",
+  "version": "0.4.0",
   "private": true,
+  "author": "Filippo Danesi <filippo.danesi93@gmail.com>",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

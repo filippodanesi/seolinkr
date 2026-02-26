@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Generate SEO metadata (title tag + meta description) via Claude."""
 
 from __future__ import annotations

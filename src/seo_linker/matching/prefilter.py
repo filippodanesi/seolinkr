@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Pre-filter target pages using multi-signal scoring.
 
 Combines embedding similarity, URL taxonomy overlap, GSC opportunity

@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Enrich target pages with title and meta description via concurrent HTTP fetches."""
 
 from __future__ import annotations

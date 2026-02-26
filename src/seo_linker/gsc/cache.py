@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """GSC data cache — avoids redundant API calls across multiple runs."""
 
 from __future__ import annotations

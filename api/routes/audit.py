@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Audit route — wraps audit_file from the core engine."""
 
 from __future__ import annotations

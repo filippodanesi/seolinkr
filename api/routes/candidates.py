@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Candidates route — wraps prefilter_pages pipeline."""
 
 from __future__ import annotations

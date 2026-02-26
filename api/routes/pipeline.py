@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Pipeline route — wraps run_pipeline with SSE for real-time progress."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Lightweight GSC client — bulk fetch, cache, local lookup."""
 
 from __future__ import annotations

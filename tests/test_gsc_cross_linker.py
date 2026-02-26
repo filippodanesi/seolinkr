@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Tests for GSC cross-linker module."""
 
 from __future__ import annotations

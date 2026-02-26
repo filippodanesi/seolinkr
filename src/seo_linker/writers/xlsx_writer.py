@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """XLSX writer — adds a column with the linked version of each content row."""
 
 from __future__ import annotations

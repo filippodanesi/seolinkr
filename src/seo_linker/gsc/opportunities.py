@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Opportunity scoring — identifies pages that benefit most from internal links."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """XLSX file parser. Each row with content is treated as a separate section."""
 
 from __future__ import annotations

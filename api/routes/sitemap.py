@@ -1,3 +1,4 @@
+# Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 """Sitemap routes — list saved sitemaps and analyze new ones."""
 
 from __future__ import annotations

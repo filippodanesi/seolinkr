@@ -10,4 +10,15 @@ from seo_linker.writers.base import BaseWriter
 
 class MarkdownWriter(BaseWriter):
     def write(self, result: LinkingResult, input_path: Path, output_path: Path) -> None:
-        output_path.write_text(result.linked_text, encoding="utf-8")
+        parts: list[str] = []
+
+        # Prepend SEO metadata as HTML comment block
+        if result.seo_title or result.seo_meta_description:
+            parts.append("<!--")
+            parts.append(f"Title: {result.seo_title}")
+            parts.append(f"Meta Description: {result.seo_meta_description}")
+            parts.append("-->")
+            parts.append("")
+
+        parts.append(result.linked_text)
+        output_path.write_text("\n".join(parts), encoding="utf-8")

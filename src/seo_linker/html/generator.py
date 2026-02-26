@@ -1,68 +1,37 @@
-"""Generate HTML output with SEO metadata and title attributes on links."""
+"""Generate SEO metadata (title tag + meta description) via Claude."""
 
 from __future__ import annotations
 
 import json
 import re
 from collections.abc import Callable
-from html import escape
-from urllib.parse import urlparse
 
 import anthropic
-import markdown
-from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from seo_linker.models import TargetPage
 
-
-def generate_html_output(
+def generate_seo_metadata(
     linked_text: str,
-    candidates: list[TargetPage],
     api_key: str,
     model: str,
     brand_name: str = "Triumph®",
     log_fn: Callable[[str], None] | None = None,
-) -> tuple[str, dict[str, str]]:
-    """Generate complete HTML output with SEO metadata and link titles.
+) -> dict[str, str]:
+    """Generate SEO title and meta description for an article.
 
     Returns
     -------
-    tuple[str, dict[str, str]]
-        The full HTML string and a dict with ``title`` and ``meta_description``.
+    dict[str, str]
+        A dict with ``title`` and ``meta_description`` keys.
     """
     log_fn = log_fn or (lambda _: None)
 
-    # Build URL -> page title mapping from candidates
-    url_titles: dict[str, str] = {}
-    for p in candidates:
-        if p.title:
-            url_titles[p.url.rstrip("/")] = p.title
-
-    # Generate title tag and meta description via Claude
     log_fn("Generating SEO title and meta description...")
     meta = _generate_meta(linked_text, api_key, model, brand_name)
     log_fn(f"  Title: {meta['title']}")
     log_fn(f"  Meta description: {meta['meta_description']}")
 
-    # Convert markdown to HTML
-    log_fn("Converting to HTML...")
-    html_body = _md_to_html(linked_text)
-
-    # Add title attributes to <a> tags
-    html_body = _add_link_titles(html_body, url_titles)
-
-    # Assemble final output
-    parts = [
-        "<!-- SEO Metadata -->",
-        f"<title>{escape(meta['title'])}</title>",
-        f'<meta name="description" content="{escape(meta["meta_description"])}" />',
-        "",
-        "<!-- Article Content -->",
-        html_body,
-    ]
-
-    return "\n".join(parts), meta
+    return meta
 
 
 # ---------------------------------------------------------------------------
@@ -150,29 +119,3 @@ def _generate_meta(
         "title": f"{h1} | {brand_name}" if h1 else brand_name,
         "meta_description": "",
     }
-
-
-def _md_to_html(md_text: str) -> str:
-    """Convert markdown to HTML."""
-    html = markdown.markdown(
-        md_text,
-        extensions=["tables", "fenced_code"],
-        output_format="html",
-    )
-    return html
-
-
-def _add_link_titles(html: str, url_titles: dict[str, str]) -> str:
-    """Add title attributes to <a> tags based on URL-to-title mapping."""
-    if not url_titles:
-        return html
-
-    soup = BeautifulSoup(html, "html.parser")
-
-    for a_tag in soup.find_all("a", href=True):
-        href = a_tag["href"].rstrip("/")
-        title = url_titles.get(href)
-        if title and not a_tag.get("title"):
-            a_tag["title"] = title
-
-    return str(soup)

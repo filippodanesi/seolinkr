@@ -171,25 +171,23 @@ def run_pipeline(
     writer.write(result, input_path, output_path)
     log_fn(f"Output written to {output_path}")
 
-    # Step 7: Generate HTML output (optional)
+    # Step 7: Generate SEO title & meta description (optional)
     if generate_html:
-        from seo_linker.html.generator import generate_html_output
+        from seo_linker.html.generator import generate_seo_metadata
 
-        html_text, meta = generate_html_output(
+        meta = generate_seo_metadata(
             linked_text=result.linked_text,
-            candidates=candidates,
             api_key=config.api_key,
             model=model,
             brand_name=brand_name,
             log_fn=log_fn,
         )
-        result.html_output = html_text
         result.seo_title = meta["title"]
         result.seo_meta_description = meta["meta_description"]
 
-        html_path = output_path.with_suffix(".txt")
-        html_path.write_text(html_text, encoding="utf-8")
-        log_fn(f"HTML output written to {html_path}")
+        # Re-write output with metadata embedded (writer reads seo_title/seo_meta_description)
+        writer.write(result, input_path, output_path)
+        log_fn(f"SEO metadata embedded in {output_path.name}")
 
     # Print report
     if result.insertions:

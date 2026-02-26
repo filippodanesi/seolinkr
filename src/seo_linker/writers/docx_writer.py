@@ -9,6 +9,7 @@ from docx import Document
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Pt, RGBColor
 
 from seo_linker.models import LinkingResult
 from seo_linker.writers.base import BaseWriter
@@ -28,6 +29,10 @@ class DocxWriter(BaseWriter):
             plain = para.text.strip()
             if plain in link_map:
                 _replace_paragraph_with_links(para, link_map[plain])
+
+        # Insert SEO metadata block at the top of the document
+        if result.seo_title or result.seo_meta_description:
+            _insert_seo_metadata(doc, result.seo_title, result.seo_meta_description)
 
         doc.save(str(output_path))
 
@@ -114,3 +119,69 @@ def _add_hyperlink(para, anchor_text: str, url: str) -> None:
 
     hyperlink.append(run)
     para._element.append(hyperlink)
+
+
+def _insert_seo_metadata(doc: Document, title: str, meta_description: str) -> None:
+    """Insert a styled SEO metadata block at the top of the document."""
+    body = doc.element.body
+    first_child = body[0] if len(body) > 0 else None
+
+    # Build paragraphs to insert (in order: header, title, meta, separator)
+    meta_color = RGBColor(0x66, 0x66, 0x66)
+    entries: list[tuple[str, bool]] = [
+        ("SEO METADATA", True),
+        (f"Title: {title}", False),
+        (f"Meta Description: {meta_description}", False),
+        ("", False),
+    ]
+
+    # Insert in reverse so they end up in the correct order at the top
+    for text, is_header in reversed(entries):
+        p_el = OxmlElement("w:p")
+
+        # Paragraph formatting: add bottom border on the empty separator line
+        if not text and not is_header:
+            pPr = OxmlElement("w:pPr")
+            pBdr = OxmlElement("w:pBdr")
+            bottom = OxmlElement("w:bottom")
+            bottom.set(qn("w:val"), "single")
+            bottom.set(qn("w:sz"), "4")
+            bottom.set(qn("w:space"), "1")
+            bottom.set(qn("w:color"), "999999")
+            pBdr.append(bottom)
+            pPr.append(pBdr)
+            p_el.append(pPr)
+
+        r_el = OxmlElement("w:r")
+        rPr = OxmlElement("w:rPr")
+
+        if is_header:
+            b = OxmlElement("w:b")
+            rPr.append(b)
+            sz = OxmlElement("w:sz")
+            sz.set(qn("w:val"), "20")  # 10pt
+            rPr.append(sz)
+
+        # Gray color for all metadata text
+        color = OxmlElement("w:color")
+        color.set(qn("w:val"), "666666")
+        rPr.append(color)
+
+        # Smaller font for non-header lines
+        if not is_header and text:
+            sz = OxmlElement("w:sz")
+            sz.set(qn("w:val"), "18")  # 9pt
+            rPr.append(sz)
+
+        r_el.append(rPr)
+
+        t_el = OxmlElement("w:t")
+        t_el.text = text
+        t_el.set(qn("xml:space"), "preserve")
+        r_el.append(t_el)
+        p_el.append(r_el)
+
+        if first_child is not None:
+            first_child.addprevious(p_el)
+        else:
+            body.append(p_el)

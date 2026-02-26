@@ -92,7 +92,7 @@ and information.
 
 ### What to do
 - Improve sentence clarity and flow.
-- Restructure paragraphs so each is 2-4 sentences.
+- Restructure paragraphs: 3-5 sentences (40-100 words), one idea each. Vary length for rhythm.
 - Convert flat headings into **question-style headings** where appropriate (e.g. \
 "How to choose the right running shoe?" instead of "Choosing a running shoe").
 - **Preserve the H1 heading** exactly as given. Add or improve a short, engaging \
@@ -108,7 +108,7 @@ structure a rough draft** into a complete, publication-ready article. The input 
 be bullet points, notes, or a partial draft.
 
 ### What to do
-- Expand bullet points and notes into full, well-structured paragraphs (2-4 sentences each).
+- Expand bullet points and notes into full, well-structured paragraphs (3-5 sentences, 40-100 words each).
 - Create a logical article structure with clear headings.
 - Use **question-style headings** where appropriate (e.g. "What makes a great trail \
 running shoe?" instead of "Trail running shoes").
@@ -139,12 +139,22 @@ before any H3 subsections. The H2 intro sets context, explains what the section 
 covers and why it matters to the reader. Never place an H2 heading followed \
 immediately by an H3 or by a single short sentence. H3 subsections can be shorter \
 (2-3 sentences are fine) because the H2 intro already provides context.
-6. **Paragraphs**: Keep paragraphs between 2 and 4 sentences. Break up walls of text.
+6. **Paragraphs**: Target 3-5 sentences (40-100 words) per paragraph. One idea per \
+paragraph. Mix short punchy paragraphs (1-2 sentences) with longer ones (4-5 sentences) \
+to create rhythm. Never exceed 6 lines of text in a single paragraph. Break up walls \
+of text for scannability.
 7. **Preserve product names and brand terminology** exactly as written.
-8. **GEO best practices**: Write clear, direct answers in the first sentence of each \
-section (this helps AI-generated summaries pick up key information). Use structured \
-data signals: lists, bold key terms, concise definitions.
-9. **Do NOT add generic filler** ("In this article we will discuss…", \
+8. **BLUF (Bottom Line Up Front)**: Every section MUST start with the key takeaway or \
+direct answer in its very first sentence. Then support it with explanation, evidence, \
+or detail. This is critical for both human readers (who scan in an F-pattern and drop \
+off after the first lines) and LLMs (which overweight the beginning of a text block \
+for retrieval and citation). Self-test: reading only the first sentence of each section \
+should give a coherent summary of the entire article.
+9. **GEO best practices**: Since every section already leads with the answer (BLUF), \
+reinforce retrievability with structured data signals: lists, bold key terms, and \
+concise definitions. Write so that an AI system can extract and cite your content \
+accurately.
+10. **Do NOT add generic filler** ("In this article we will discuss…", \
 "As we all know…"). Every sentence should carry information or value.
 
 ## Anti-AI-writing rules (CRITICAL — your output must read as human-written)

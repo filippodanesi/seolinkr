@@ -64,9 +64,9 @@ def _replace_paragraph_with_links(para, linked_text: str) -> None:
     for run in para.runs:
         run.text = ""
 
-    # Remove all existing run elements
+    # Remove all existing run and hyperlink elements
     for child in list(para._element):
-        if child.tag.endswith("}r"):
+        if child.tag.endswith("}r") or child.tag.endswith("}hyperlink"):
             para._element.remove(child)
 
     # Parse the linked text and insert runs + hyperlinks

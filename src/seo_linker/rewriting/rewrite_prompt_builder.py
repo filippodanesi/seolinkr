@@ -95,7 +95,8 @@ and information.
 - Restructure paragraphs so each is 2-4 sentences.
 - Convert flat headings into **question-style headings** where appropriate (e.g. \
 "How to choose the right running shoe?" instead of "Choosing a running shoe").
-- Add a short, engaging introduction if the article lacks one.
+- **Preserve the H1 heading** exactly as given. Add or improve a short, engaging \
+introduction paragraph (2-4 sentences) right after the H1, before the first H2.
 - Ensure a clear conclusion or summary paragraph at the end.
 - Preserve all factual claims, product names, and data points.
 
@@ -111,7 +112,8 @@ be bullet points, notes, or a partial draft.
 - Create a logical article structure with clear headings.
 - Use **question-style headings** where appropriate (e.g. "What makes a great trail \
 running shoe?" instead of "Trail running shoes").
-- Write a compelling introduction that hooks the reader.
+- **Preserve the H1 heading** exactly as given. Write a compelling introduction \
+paragraph (2-4 sentences) right after the H1, before the first H2.
 - Write a conclusion or summary section.
 - Fill in transitional sentences between sections for editorial flow.
 - Preserve all factual claims, product names, and data points from the draft.
@@ -122,15 +124,16 @@ _SHARED_RULES = """\
 ## Output rules
 
 1. **Output ONLY the rewritten markdown content.** No preamble, no explanation, \
-no analysis, no "Here is the rewritten article:" — start IMMEDIATELY with the first \
-heading or paragraph of the article. The very first line of your response must be content.
+no analysis, no "Here is the rewritten article:" — start IMMEDIATELY with the H1 \
+heading of the article. The very first line of your response must be the H1 (`#`).
 2. **Do NOT insert any links.** No markdown links, no URLs in the text. Links will \
 be added in a separate step.
 3. **Maintain the original language.** If the input is in German, write in German. \
 If in Italian, write in Italian. Never translate.
-4. **Heading structure**: Use H2 (`##`) for main sections and H3 (`###`) for \
-subsections. Never use H1 (`#`) — that is reserved for the page title which is \
-handled separately.
+4. **Heading structure**: **Preserve the H1 (`#`) heading from the input exactly as \
+written.** The article MUST start with the original H1 heading, followed by a concise \
+introductory paragraph (2-4 sentences) before the first H2. Use H2 (`##`) for main \
+sections and H3 (`###`) for subsections.
 5. **H2 sections must have a substantial introductory paragraph** (3-5 sentences) \
 before any H3 subsections. The H2 intro sets context, explains what the section \
 covers and why it matters to the reader. Never place an H2 heading followed \

@@ -17,25 +17,109 @@ from seo_linker.writers.base import BaseWriter
 
 # Pattern to find markdown links
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+# Pattern to detect markdown headings
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)")
 
 
 class DocxWriter(BaseWriter):
     def write(self, result: LinkingResult, input_path: Path, output_path: Path) -> None:
-        doc = Document(str(input_path))
+        if result.rewritten_text:
+            # Rewrite path: paragraphs changed, so rebuild the doc from linked_text
+            doc = _write_from_linked_text(result, input_path)
+        else:
+            # No-rewrite path: match original paragraphs in the .docx
+            doc = Document(str(input_path))
+            link_map = _build_link_map(result)
+            for para in doc.paragraphs:
+                plain = para.text.strip()
+                if plain in link_map:
+                    _replace_paragraph_with_links(para, link_map[plain])
 
-        # Build a map of original paragraph text -> linked text with replacements
-        link_map = _build_link_map(result)
-
-        for para in doc.paragraphs:
-            plain = para.text.strip()
-            if plain in link_map:
-                _replace_paragraph_with_links(para, link_map[plain])
-
-        # Insert SEO metadata block at the top of the document
+        # Insert SEO metadata block at the end of the document
         if result.seo_title or result.seo_meta_description:
             _insert_seo_metadata(doc, result.seo_title, result.seo_meta_description)
 
         doc.save(str(output_path))
+
+
+def _write_from_linked_text(result: LinkingResult, input_path: Path) -> Document:
+    """Build a new Document from linked_text when rewrite was active.
+
+    Copies base font info from the original .docx, then writes headings,
+    body paragraphs (with hyperlinks), and plain-text table rows.
+    """
+    orig_doc = Document(str(input_path))
+
+    # Extract base font info from the first body paragraph in the original doc
+    base_font_name = None
+    base_font_size = None
+    for para in orig_doc.paragraphs:
+        if para.style and para.style.name and para.style.name.startswith("Heading"):
+            continue
+        for run in para.runs:
+            if run.font.name:
+                base_font_name = run.font.name
+            if run.font.size:
+                base_font_size = run.font.size
+            if base_font_name and base_font_size:
+                break
+        if base_font_name and base_font_size:
+            break
+
+    doc = Document()
+
+    for line in result.linked_text.split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        # Heading lines
+        heading_match = HEADING_RE.match(stripped)
+        if heading_match:
+            level = len(heading_match.group(1))  # 1-6
+            text = heading_match.group(2).strip()
+            doc.add_heading(text, level=min(level, 9))
+            continue
+
+        # Table rows — write as small plain-text paragraphs
+        if stripped.startswith("|"):
+            para = doc.add_paragraph()
+            run = para.add_run(stripped)
+            run.font.size = Pt(8)
+            run.font.name = base_font_name or "Calibri"
+            continue
+
+        # Normal paragraph — parse markdown links into hyperlinks
+        para = doc.add_paragraph()
+        _populate_paragraph_with_links(para, stripped, base_font_name, base_font_size)
+
+    return doc
+
+
+def _populate_paragraph_with_links(
+    para, text: str, font_name: str | None, font_size: Pt | None
+) -> None:
+    """Parse markdown links in *text* and populate *para* with runs + hyperlinks."""
+    last_end = 0
+    for match in LINK_RE.finditer(text):
+        before = text[last_end : match.start()]
+        if before:
+            run = para.add_run(before)
+            if font_name:
+                run.font.name = font_name
+            if font_size:
+                run.font.size = font_size
+
+        _add_hyperlink(para, match.group(1), match.group(2))
+        last_end = match.end()
+
+    remaining = text[last_end:]
+    if remaining:
+        run = para.add_run(remaining)
+        if font_name:
+            run.font.name = font_name
+        if font_size:
+            run.font.size = font_size
 
 
 def _build_link_map(result: LinkingResult) -> dict[str, str]:

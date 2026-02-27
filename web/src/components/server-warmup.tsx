@@ -10,10 +10,10 @@ const MAX_ATTEMPTS = 30; // ~90s max wait
 
 export function ServerWarmup({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    let attempts = 0;
 
     async function poll() {
       const ok = await healthCheck();
@@ -22,8 +22,8 @@ export function ServerWarmup({ children }: { children: React.ReactNode }) {
         setReady(true);
         return;
       }
-      setAttempt((a) => a + 1);
-      if (attempt < MAX_ATTEMPTS) {
+      attempts += 1;
+      if (attempts < MAX_ATTEMPTS) {
         setTimeout(poll, POLL_INTERVAL);
       }
     }
@@ -32,7 +32,7 @@ export function ServerWarmup({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, []);
 
   if (ready) return <>{children}</>;
 

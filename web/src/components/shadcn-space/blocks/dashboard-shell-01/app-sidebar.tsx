@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "@/assets/logo/logo";
 import { NavMain } from "@/components/shadcn-space/blocks/dashboard-shell-01/nav-main";
-import { Settings } from "lucide-react";
 import { SiteHeader } from "@/components/shadcn-space/blocks/dashboard-shell-01/site-header";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
@@ -79,10 +78,7 @@ const AppSidebar = ({ children }: { children: React.ReactNode }) => {
                       : "rounded-md text-sm px-3 py-2 h-9"
                   }
                 >
-                  <Link href="/settings">
-                    <Settings className="size-4" />
-                    <span>Settings</span>
-                  </Link>
+                  <Link href="/settings">Settings</Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

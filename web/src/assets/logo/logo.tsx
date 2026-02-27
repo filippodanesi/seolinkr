@@ -1,14 +1,11 @@
-import { FileSearch } from "lucide-react";
-
 const Logo = () => {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex aspect-square size-8 items-center justify-center rounded-sm bg-primary">
-        <FileSearch className="size-5 text-primary-foreground" />
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.svg" alt="SEOLinkr" className="size-7" />
       <div className="flex flex-col gap-0.5 leading-none">
-        <span className="font-medium text-sm">SEO Linker</span>
-        <span className="text-xs text-muted-foreground">v0.4.0</span>
+        <span className="font-medium text-sm">SEOLinkr</span>
+        <span className="text-[10px] text-muted-foreground">v0.4.0</span>
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ def prefilter_pages(
     sections: list[ContentSection],
     pages: list[TargetPage],
     top_n: int = 25,
-    model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    model_name: str = "intfloat/multilingual-e5-small",
 ) -> list[TargetPage]:
     """Return the top-N most relevant pages using multi-signal scoring.
 

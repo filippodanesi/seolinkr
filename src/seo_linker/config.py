@@ -21,7 +21,7 @@ class Config:
     default_model: str = "claude-opus-4-6"
     max_links: int = 10
     top_n: int = 40
-    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_model: str = "intfloat/multilingual-e5-small"
     cache_ttl_hours: int = 24
     sitemaps: dict[str, str] = field(default_factory=dict)  # name -> sitemap URL
     brand_guidelines: str = ""

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 64
 MAX_CHARS = 2000  # Truncate long texts to stay within model token limits
-HF_API_URL = "https://api-inference.huggingface.co/models/{model_name}"
+HF_ROUTER_URL = "https://router.huggingface.co/hf-inference/models/{model_name}/pipeline/feature-extraction"
 
 
 def _is_retryable(exc: BaseException) -> bool:
@@ -33,7 +33,7 @@ def _is_retryable(exc: BaseException) -> bool:
 )
 def _call_hf_api(texts: list[str], model_name: str, token: str) -> list[list[float]]:
     """Call HuggingFace Inference API for a single batch."""
-    url = HF_API_URL.format(model_name=model_name)
+    url = HF_ROUTER_URL.format(model_name=model_name)
     resp = requests.post(
         url,
         headers={"Authorization": f"Bearer {token}"},
@@ -46,7 +46,7 @@ def _call_hf_api(texts: list[str], model_name: str, token: str) -> list[list[flo
 
 def encode_texts(
     texts: list[str],
-    model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    model_name: str = "intfloat/multilingual-e5-small",
 ) -> np.ndarray:
     """Encode texts into embeddings via HuggingFace Inference API.
 
@@ -74,7 +74,7 @@ def encode_texts(
         logger.info("Embedding batch %d/%d (%d texts)...", batch_idx + 1, total_batches, len(batch))
         t0 = time.time()
         result = _call_hf_api(batch, model_name, token)
-        logger.info("  Batch %d/%d done in %.1fs", batch_idx + 1, total_batches, time.time() - t0)
         all_embeddings.extend(result)
+        logger.info("  Batch %d/%d done in %.1fs", batch_idx + 1, total_batches, time.time() - t0)
 
     return np.array(all_embeddings, dtype=np.float32)

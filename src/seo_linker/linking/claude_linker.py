@@ -191,4 +191,11 @@ def _parse_response(response: str) -> tuple[str, list[LinkInsertion]]:
             except json.JSONDecodeError:
                 pass
 
-    return linked_text, insertions
+    # Cross-check: verify reported insertions actually exist in the text
+    actual_links = set(re.findall(r"\[([^\]]+)\]\(([^)]+)\)", linked_text))
+    verified: list[LinkInsertion] = []
+    for ins in insertions:
+        if any(url == ins.target_url for _, url in actual_links):
+            verified.append(ins)
+
+    return linked_text, verified

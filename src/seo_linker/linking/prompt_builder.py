@@ -67,6 +67,9 @@ content length and topic density.
 10. **Spacing**: Maximum 1 link per sentence, maximum 2 links per paragraph.
 11. **Body text only**: Never add links inside headings (lines starting with # in markdown). \
 Contextual links embedded in body paragraphs are the most valuable type of internal link.
+12. **Prefer paragraphs over tables**: Always place links in regular body paragraphs. Only \
+place a link inside a table cell if there is no paragraph in the content where the topic \
+is discussed. Tables are a last resort for link placement.
 
 ### Restrictions
 12. **Self-link prevention**: If a "current page URL" is provided, never link to it.

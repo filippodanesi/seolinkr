@@ -123,66 +123,35 @@ def _add_hyperlink(para, anchor_text: str, url: str) -> None:
 
 
 def _insert_seo_metadata(doc: Document, title: str, meta_description: str) -> None:
-    """Insert a styled SEO metadata block at the top of the document."""
-    body = doc.element.body
-    first_child = body[0] if len(body) > 0 else None
+    """Insert a styled SEO metadata block at the end of the document."""
+    # Separator line before the block
+    sep = doc.add_paragraph()
+    sep_pPr = OxmlElement("w:pPr")
+    sep_pBdr = OxmlElement("w:pBdr")
+    top_border = OxmlElement("w:top")
+    top_border.set(qn("w:val"), "single")
+    top_border.set(qn("w:sz"), "4")
+    top_border.set(qn("w:space"), "1")
+    top_border.set(qn("w:color"), "999999")
+    sep_pBdr.append(top_border)
+    sep_pPr.append(sep_pBdr)
+    sep._element.insert(0, sep_pPr)
 
-    # Build paragraphs to insert (in order: header, title, meta, separator)
-    meta_color = RGBColor(0x66, 0x66, 0x66)
-    entries: list[tuple[str, bool]] = [
-        ("SEO METADATA", True),
-        (f"Title: {title}", False),
-        (f"Meta Description: {meta_description}", False),
-        ("", False),
-    ]
+    # Header line
+    header_p = doc.add_paragraph()
+    header_run = header_p.add_run("SEO METADATA")
+    header_run.bold = True
+    header_run.font.size = Pt(10)
+    header_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-    # Insert in reverse so they end up in the correct order at the top
-    for text, is_header in reversed(entries):
-        p_el = OxmlElement("w:p")
+    # Title
+    title_p = doc.add_paragraph()
+    title_run = title_p.add_run(f"Title: {title}")
+    title_run.font.size = Pt(9)
+    title_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-        # Paragraph formatting: add bottom border on the empty separator line
-        if not text and not is_header:
-            pPr = OxmlElement("w:pPr")
-            pBdr = OxmlElement("w:pBdr")
-            bottom = OxmlElement("w:bottom")
-            bottom.set(qn("w:val"), "single")
-            bottom.set(qn("w:sz"), "4")
-            bottom.set(qn("w:space"), "1")
-            bottom.set(qn("w:color"), "999999")
-            pBdr.append(bottom)
-            pPr.append(pBdr)
-            p_el.append(pPr)
-
-        r_el = OxmlElement("w:r")
-        rPr = OxmlElement("w:rPr")
-
-        if is_header:
-            b = OxmlElement("w:b")
-            rPr.append(b)
-            sz = OxmlElement("w:sz")
-            sz.set(qn("w:val"), "20")  # 10pt
-            rPr.append(sz)
-
-        # Gray color for all metadata text
-        color = OxmlElement("w:color")
-        color.set(qn("w:val"), "666666")
-        rPr.append(color)
-
-        # Smaller font for non-header lines
-        if not is_header and text:
-            sz = OxmlElement("w:sz")
-            sz.set(qn("w:val"), "18")  # 9pt
-            rPr.append(sz)
-
-        r_el.append(rPr)
-
-        t_el = OxmlElement("w:t")
-        t_el.text = text
-        t_el.set(qn("xml:space"), "preserve")
-        r_el.append(t_el)
-        p_el.append(r_el)
-
-        if first_child is not None:
-            first_child.addprevious(p_el)
-        else:
-            body.append(p_el)
+    # Meta description
+    meta_p = doc.add_paragraph()
+    meta_run = meta_p.add_run(f"Meta Description: {meta_description}")
+    meta_run.font.size = Pt(9)
+    meta_run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)

@@ -40,6 +40,7 @@ async def process(
     config = get_config()
     content = await file.read()
     filename = file.filename or "file.md"
+    stem = filename.rsplit(".", 1)[0]
     suffix = "." + filename.rsplit(".", 1)[-1]
     sitemap_urls = [s.strip() for s in sitemaps.split(",") if s.strip()]
 
@@ -88,7 +89,7 @@ async def process(
                 # Base64 encode the raw file for client-side download
                 raw_bytes = output_path.read_bytes()
                 data["output_base64"] = base64.b64encode(raw_bytes).decode("ascii")
-                data["output_filename"] = output_path.name
+                data["output_filename"] = f"{stem}_linked{suffix}"
             return data
 
     async def event_stream():

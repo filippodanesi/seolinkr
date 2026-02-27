@@ -31,53 +31,75 @@ function handleDownload(base64: string, filename: string) {
 
 export function LinkReport({ result }: { result: LinkingResult }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-base">
-          Inserted Links
-          <span className="ml-2 text-sm font-normal text-muted-foreground">
-            ({result.insertions.length})
-          </span>
-        </CardTitle>
-        {result.output_base64 && result.output_filename && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              handleDownload(result.output_base64!, result.output_filename!)
-            }
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Anchor Text</TableHead>
-              <TableHead>Target URL</TableHead>
-              <TableHead>Reasoning</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {result.insertions.map((ins, i) => (
-              <TableRow key={i}>
-                <TableCell className="font-medium">
-                  {ins.anchor_text}
-                </TableCell>
-                <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-                  {ins.target_url}
-                </TableCell>
-                <TableCell className="max-w-sm text-xs">
-                  {ins.reasoning}
-                </TableCell>
+    <div className="space-y-4">
+      {/* SEO Metadata (when generated) */}
+      {result.seo_title && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">SEO Metadata</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5 text-sm">
+            <div>
+              <span className="font-medium text-muted-foreground">Title: </span>
+              {result.seo_title}
+            </div>
+            <div>
+              <span className="font-medium text-muted-foreground">Meta Description: </span>
+              {result.seo_meta_description}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Inserted Links */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base">
+            Inserted Links
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({result.insertions.length})
+            </span>
+          </CardTitle>
+          {result.output_base64 && result.output_filename && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                handleDownload(result.output_base64!, result.output_filename!)
+              }
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Anchor Text</TableHead>
+                <TableHead>Target URL</TableHead>
+                <TableHead>Reasoning</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {result.insertions.map((ins, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">
+                    {ins.anchor_text}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
+                    {ins.target_url}
+                  </TableCell>
+                  <TableCell className="max-w-sm text-xs">
+                    {ins.reasoning}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

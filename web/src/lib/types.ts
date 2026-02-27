@@ -54,6 +54,8 @@ export interface LinkingResult {
   seo_title: string;
   seo_meta_description: string;
   output_content?: string;
+  output_base64?: string;
+  output_filename?: string;
 }
 
 export interface Opportunity {

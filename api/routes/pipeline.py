@@ -76,14 +76,19 @@ async def process(
                 brand_name=brand_name,
             )
             data = asdict(result)
-            # Read output file content if it exists
+            # Read output file content and encode for download
             if output_path.exists():
+                import base64
                 if output_path.suffix == ".docx":
                     import docx
                     doc = docx.Document(str(output_path))
                     data["output_content"] = "\n".join(p.text for p in doc.paragraphs)
                 else:
                     data["output_content"] = output_path.read_text(encoding="utf-8")
+                # Base64 encode the raw file for client-side download
+                raw_bytes = output_path.read_bytes()
+                data["output_base64"] = base64.b64encode(raw_bytes).decode("ascii")
+                data["output_filename"] = output_path.name
             return data
 
     async def event_stream():

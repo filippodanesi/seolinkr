@@ -92,8 +92,15 @@ export default function ProcessPage() {
       <Card>
         <CardContent className="space-y-4 p-6">
           <FileUploader onFile={setFile} />
-          <SitemapSelector value={sitemap} onChange={setSitemap} />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <SitemapSelector value={sitemap} onChange={setSitemap} />
+            <GscSiteSelector
+              label="GSC Site (optional)"
+              value={gscSite}
+              onChange={setGscSite}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Max Links</Label>
               <Input
@@ -110,11 +117,6 @@ export default function ProcessPage() {
                 onChange={(e) => setTopN(Number(e.target.value))}
               />
             </div>
-            <GscSiteSelector
-              label="GSC Site (optional)"
-              value={gscSite}
-              onChange={setGscSite}
-            />
           </div>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm">

@@ -65,9 +65,18 @@ export default function ProcessPage() {
       );
     } catch (e) {
       if (controller.signal.aborted) {
-        setLogs((prev) => [...prev, "Pipeline cancelled by user."]);
+        setLogs((prev) => [
+          ...prev,
+          "\u274C Pipeline cancelled by user.",
+        ]);
       } else {
-        toast.error(String(e));
+        const msg = String(e);
+        setLogs((prev) => [
+          ...prev,
+          `\u274C Error: ${msg}`,
+          "The connection to the server was lost. This can happen if the server restarted. Please try again.",
+        ]);
+        toast.error(msg);
       }
       setRunning(false);
     } finally {

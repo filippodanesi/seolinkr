@@ -12,6 +12,62 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Load .env before anything reads os.environ
 
+from seo_linker.config import Config
+
+_log = logging.getLogger("seolinkr.startup")
+
+
+def _check_config() -> None:
+    """Log a summary of loaded configuration at startup."""
+    cfg = Config.load()
+    _log.info("--- Configuration check ---")
+
+    # API key
+    if cfg.api_key:
+        _log.info("ANTHROPIC_API_KEY: OK (%s...%s)", cfg.api_key[:7], cfg.api_key[-4:])
+    else:
+        _log.warning("ANTHROPIC_API_KEY: MISSING")
+
+    # HF token
+    hf = os.environ.get("HF_TOKEN", "")
+    if hf:
+        _log.info("HF_TOKEN: OK (%s...%s)", hf[:5], hf[-4:])
+    else:
+        _log.warning("HF_TOKEN: MISSING")
+
+    # Brand guidelines
+    if cfg.brand_guidelines:
+        _log.info("BRAND_GUIDELINES: OK (%d chars)", len(cfg.brand_guidelines))
+    else:
+        _log.warning("BRAND_GUIDELINES: NOT LOADED (no URL, file, or inline value)")
+
+    # Sitemaps
+    if cfg.sitemaps:
+        _log.info("SITEMAPS: %d configured (%s)", len(cfg.sitemaps), ", ".join(cfg.sitemaps))
+    else:
+        _log.warning("SITEMAPS: NONE")
+
+    # GSC
+    if cfg.gsc_service_account:
+        _log.info("GSC_SERVICE_ACCOUNT: OK")
+    elif cfg.gsc_oauth_secrets:
+        _log.info("GSC_OAUTH_SECRETS: OK")
+    else:
+        _log.warning("GSC: NO CREDENTIALS (GSC features disabled)")
+
+    # Frontend URL
+    frontend = os.environ.get("FRONTEND_URL", "")
+    if frontend:
+        _log.info("FRONTEND_URL: %s", frontend)
+    else:
+        _log.info("FRONTEND_URL: not set (CORS localhost only)")
+
+    _log.info("Model: %s | Max links: %d | Top-N: %d", cfg.default_model, cfg.max_links, cfg.top_n)
+    _log.info("--- End configuration check ---")
+
+
+_check_config()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

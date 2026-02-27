@@ -86,10 +86,11 @@ async def process(
 
         while not future.done():
             try:
-                msg = await asyncio.wait_for(queue.get(), timeout=0.5)
+                msg = await asyncio.wait_for(queue.get(), timeout=10)
                 yield f"data: {msg}\n\n"
             except asyncio.TimeoutError:
-                continue
+                # Send SSE comment as heartbeat to keep connection alive
+                yield ": heartbeat\n\n"
 
         # Drain remaining log messages
         while not queue.empty():

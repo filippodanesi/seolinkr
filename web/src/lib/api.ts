@@ -80,6 +80,7 @@ export async function runPipeline(
     rewriteInstructions?: string;
     generateHtml?: boolean;
     brandName?: string;
+    signal?: AbortSignal;
   },
   onEvent: (event: SSEEvent) => void,
   onDone: () => void
@@ -104,6 +105,7 @@ export async function runPipeline(
   const res = await fetch(`${API_BASE}/process`, {
     method: "POST",
     body: form,
+    signal: opts.signal,
   });
 
   if (!res.ok || !res.body) {

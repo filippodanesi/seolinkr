@@ -1,8 +1,9 @@
 // Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { OctagonX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,12 +28,16 @@ export default function ProcessPage() {
   const [logs, setLogs] = useState<string[]>([]);
   const [result, setResult] = useState<LinkingResult | null>(null);
   const [running, setRunning] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   async function handleProcess() {
     if (!file || !sitemap) return;
     setRunning(true);
     setLogs([]);
     setResult(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       await runPipeline(
@@ -45,6 +50,7 @@ export default function ProcessPage() {
           gscSite: gscSite || undefined,
           enableRewrite,
           generateHtml,
+          signal: controller.signal,
         },
         (event: SSEEvent) => {
           if (event.type === "log") {
@@ -58,9 +64,19 @@ export default function ProcessPage() {
         () => setRunning(false)
       );
     } catch (e) {
-      toast.error(String(e));
+      if (controller.signal.aborted) {
+        setLogs((prev) => [...prev, "Pipeline cancelled by user."]);
+      } else {
+        toast.error(String(e));
+      }
       setRunning(false);
+    } finally {
+      abortRef.current = null;
     }
+  }
+
+  function handleCancel() {
+    abortRef.current?.abort();
   }
 
   return (
@@ -121,12 +137,20 @@ export default function ProcessPage() {
               Generate SEO metadata
             </label>
           </div>
-          <Button
-            onClick={handleProcess}
-            disabled={!file || !sitemap || running}
-          >
-            {running ? "Processing..." : "Process Article"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleProcess}
+              disabled={!file || !sitemap || running}
+            >
+              {running ? "Processing..." : "Process Article"}
+            </Button>
+            {running && (
+              <Button variant="destructive" onClick={handleCancel}>
+                <OctagonX className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -7,6 +7,8 @@ boost, and heading topic coverage for more precise candidate selection.
 
 from __future__ import annotations
 
+import logging
+import time
 from collections import Counter
 from urllib.parse import urlparse
 
@@ -14,6 +16,8 @@ import numpy as np
 
 from seo_linker.matching.embeddings import encode_texts
 from seo_linker.models import ContentSection, TargetPage
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Multilingual stop words (EN, DE, FR, IT, ES, NL)
@@ -88,10 +92,17 @@ def prefilter_pages(
     query_prefix = "query: " if is_e5 else ""
     passage_prefix = "passage: " if is_e5 else ""
 
+    logger.info("Encoding query embedding (1 text)...")
+    t0 = time.time()
     query_emb = encode_texts([query_prefix + content_text], model_name)[0]
+    logger.info("Query embedding done in %.1fs", time.time() - t0)
+
+    logger.info("Encoding %d passage embeddings...", len(page_texts))
+    t0 = time.time()
     passage_embs = encode_texts(
         [passage_prefix + t for t in page_texts], model_name
     )
+    logger.info("Passage embeddings done in %.1fs", time.time() - t0)
     emb_scores = _cosine_similarity(query_emb, passage_embs)
 
     # Normalize to 0-1

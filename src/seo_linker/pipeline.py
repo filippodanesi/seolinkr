@@ -150,6 +150,7 @@ def run_pipeline(
 
     # Pre-filter with multi-signal scoring (embedding + URL taxonomy + GSC + headings)
     log_fn(f"Pre-filtering to top {top_n} candidates via multi-signal scoring...")
+    log_fn(f"  Computing embeddings for {len(pages)} pages (HuggingFace API)...")
     candidates = prefilter_pages(sections, pages, top_n, config.embedding_model)
     log_fn(f"  Selected {len(candidates)} candidate pages")
 

@@ -19,6 +19,10 @@ from seo_linker.writers.base import BaseWriter
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 # Pattern to detect markdown headings
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)")
+# Pattern to detect **bold** spans
+BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+# Markdown table separator row (e.g. |---|---|)
+TABLE_SEP_RE = re.compile(r"^\|[\s\-:|]+\|$")
 
 
 class DocxWriter(BaseWriter):
@@ -67,10 +71,15 @@ def _write_from_linked_text(result: LinkingResult, input_path: Path) -> Document
             break
 
     doc = Document()
+    lines = result.linked_text.split("\n")
+    i = 0
 
-    for line in result.linked_text.split("\n"):
-        stripped = line.strip()
+    while i < len(lines):
+        stripped = lines[i].strip()
+
+        # Skip empty lines
         if not stripped:
+            i += 1
             continue
 
         # Heading lines
@@ -79,19 +88,32 @@ def _write_from_linked_text(result: LinkingResult, input_path: Path) -> Document
             level = len(heading_match.group(1))  # 1-6
             text = heading_match.group(2).strip()
             doc.add_heading(text, level=min(level, 9))
+            i += 1
             continue
 
-        # Table rows — write as small plain-text paragraphs
+        # Markdown table — collect consecutive | lines and build a real table
         if stripped.startswith("|"):
-            para = doc.add_paragraph()
-            run = para.add_run(stripped)
-            run.font.size = Pt(8)
-            run.font.name = base_font_name or "Calibri"
+            table_lines: list[str] = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                table_lines.append(lines[i].strip())
+                i += 1
+            _add_markdown_table(doc, table_lines, base_font_name)
             continue
 
-        # Normal paragraph — parse markdown links into hyperlinks
+        # Bullet list items (- text or * text)
+        if re.match(r"^[-*]\s+", stripped):
+            text = re.sub(r"^[-*]\s+", "", stripped)
+            para = doc.add_paragraph(style="List Bullet")
+            _populate_paragraph_with_links(
+                para, text, base_font_name, base_font_size
+            )
+            i += 1
+            continue
+
+        # Normal paragraph — parse markdown links + bold into runs
         para = doc.add_paragraph()
         _populate_paragraph_with_links(para, stripped, base_font_name, base_font_size)
+        i += 1
 
     return doc
 
@@ -99,27 +121,85 @@ def _write_from_linked_text(result: LinkingResult, input_path: Path) -> Document
 def _populate_paragraph_with_links(
     para, text: str, font_name: str | None, font_size: Pt | None
 ) -> None:
-    """Parse markdown links in *text* and populate *para* with runs + hyperlinks."""
+    """Parse markdown links and **bold** in *text* and populate *para*."""
     last_end = 0
     for match in LINK_RE.finditer(text):
         before = text[last_end : match.start()]
         if before:
-            run = para.add_run(before)
-            if font_name:
-                run.font.name = font_name
-            if font_size:
-                run.font.size = font_size
+            _add_formatted_runs(para, before, font_name, font_size)
 
         _add_hyperlink(para, match.group(1), match.group(2))
         last_end = match.end()
 
     remaining = text[last_end:]
     if remaining:
-        run = para.add_run(remaining)
+        _add_formatted_runs(para, remaining, font_name, font_size)
+
+
+def _add_formatted_runs(
+    para, text: str, font_name: str | None, font_size: Pt | None
+) -> None:
+    """Add runs to *para*, converting **bold** markers to bold formatting."""
+    last = 0
+    for match in BOLD_RE.finditer(text):
+        # Text before the bold span
+        before = text[last : match.start()]
+        if before:
+            run = para.add_run(before)
+            if font_name:
+                run.font.name = font_name
+            if font_size:
+                run.font.size = font_size
+        # Bold text
+        run = para.add_run(match.group(1))
+        run.bold = True
         if font_name:
             run.font.name = font_name
         if font_size:
             run.font.size = font_size
+        last = match.end()
+
+    # Text after last bold span (or entire text if no bold)
+    after = text[last:]
+    if after:
+        run = para.add_run(after)
+        if font_name:
+            run.font.name = font_name
+        if font_size:
+            run.font.size = font_size
+
+
+def _add_markdown_table(doc: Document, table_lines: list[str], font_name: str | None) -> None:
+    """Parse markdown table lines and add a real docx table."""
+    # Split cells from each row, stripping outer pipes
+    def _parse_row(line: str) -> list[str]:
+        cells = line.strip().strip("|").split("|")
+        return [c.strip() for c in cells]
+
+    # Filter out separator rows (|---|---|)
+    data_rows = [ln for ln in table_lines if not TABLE_SEP_RE.match(ln)]
+    if not data_rows:
+        return
+
+    parsed = [_parse_row(r) for r in data_rows]
+    n_cols = max(len(r) for r in parsed)
+    n_rows = len(parsed)
+
+    table = doc.add_table(rows=n_rows, cols=n_cols)
+    table.style = "Table Grid"
+
+    for row_idx, cells in enumerate(parsed):
+        for col_idx, cell_text in enumerate(cells):
+            if col_idx >= n_cols:
+                break
+            cell = table.rows[row_idx].cells[col_idx]
+            para = cell.paragraphs[0]
+            # Parse bold in cell text
+            _add_formatted_runs(para, cell_text, font_name, None)
+            # Bold the header row
+            if row_idx == 0:
+                for run in para.runs:
+                    run.bold = True
 
 
 def _build_link_map(result: LinkingResult) -> dict[str, str]:
@@ -183,7 +263,7 @@ def _add_run(para, text: str) -> None:
 
 
 def _add_hyperlink(para, anchor_text: str, url: str) -> None:
-    """Add a hyperlink to a paragraph."""
+    """Add a hyperlink to a paragraph with explicit blue + underline styling."""
     part = para.part
     r_id = part.relate_to(url, RT.HYPERLINK, is_external=True)
 
@@ -192,9 +272,22 @@ def _add_hyperlink(para, anchor_text: str, url: str) -> None:
 
     run = OxmlElement("w:r")
     rPr = OxmlElement("w:rPr")
+
+    # Style reference (works when the style exists in the doc)
     rStyle = OxmlElement("w:rStyle")
     rStyle.set(qn("w:val"), "Hyperlink")
     rPr.append(rStyle)
+
+    # Explicit blue color — ensures visibility even without the Hyperlink style
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0563C1")
+    rPr.append(color)
+
+    # Explicit underline
+    u = OxmlElement("w:u")
+    u.set(qn("w:val"), "single")
+    rPr.append(u)
+
     run.append(rPr)
 
     text_el = OxmlElement("w:t")

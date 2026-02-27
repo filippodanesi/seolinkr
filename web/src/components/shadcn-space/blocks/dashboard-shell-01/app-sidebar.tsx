@@ -92,8 +92,8 @@ const AppSidebar = ({ children }: { children: React.ReactNode }) => {
                   asChild
                   className={
                     pathname === "/settings"
-                      ? "bg-primary hover:bg-primary dark:bg-blue-500 text-white dark:hover:bg-blue-500 hover:text-white rounded-lg text-sm px-3 py-2 h-9"
-                      : "rounded-lg text-sm px-3 py-2 h-9"
+                      ? "bg-accent font-medium rounded-md text-sm px-3 py-2 h-9"
+                      : "rounded-md text-sm px-3 py-2 h-9"
                   }
                 >
                   <Link href="/settings">

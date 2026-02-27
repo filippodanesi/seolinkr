@@ -52,7 +52,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     tooltip={item.title}
-                    className="rounded-xl text-sm px-3 py-2 h-9"
+                    className="rounded-md text-sm px-3 py-2 h-9"
                   >
                     {item.icon && <item.icon size={16} />}
                     <span>{item.title}</span>
@@ -82,9 +82,8 @@ export function NavMain({ items }: { items: NavItem[] }) {
               <SidebarMenuButton
                 tooltip={item.title}
                 className={cn(
-                  "rounded-lg text-sm px-3 py-2 h-9",
-                  isActive &&
-                    "bg-primary hover:bg-primary dark:bg-blue-500 text-white dark:hover:bg-blue-500 hover:text-white"
+                  "rounded-md text-sm px-3 py-2 h-9",
+                  isActive && "bg-accent font-medium"
                 )}
               >
                 {item.icon && <item.icon size={16} />}

@@ -21,7 +21,6 @@ export default function ProcessPage() {
   const [sitemap, setSitemap] = useState("");
   const [maxLinks, setMaxLinks] = useState(10);
   const [topN, setTopN] = useState(40);
-  const [currentUrl, setCurrentUrl] = useState("");
   const [gscSite, setGscSite] = useState("");
   const [enableRewrite, setEnableRewrite] = useState(false);
   const [generateHtml, setGenerateHtml] = useState(false);
@@ -47,7 +46,6 @@ export default function ProcessPage() {
         {
           maxLinks,
           topN,
-          currentUrl: currentUrl || undefined,
           gscSite: gscSite || undefined,
           enableRewrite,
           generateHtml,
@@ -95,7 +93,7 @@ export default function ProcessPage() {
         <CardContent className="space-y-4 p-6">
           <FileUploader onFile={setFile} />
           <SitemapSelector value={sitemap} onChange={setSitemap} />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>Max Links</Label>
               <Input
@@ -110,14 +108,6 @@ export default function ProcessPage() {
                 type="number"
                 value={topN}
                 onChange={(e) => setTopN(Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Current URL (optional)</Label>
-              <Input
-                placeholder="https://..."
-                value={currentUrl}
-                onChange={(e) => setCurrentUrl(e.target.value)}
               />
             </div>
             <GscSiteSelector

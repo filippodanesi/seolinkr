@@ -46,7 +46,7 @@ def _call_hf_api(texts: list[str], model_name: str, token: str) -> list[list[flo
 
 def encode_texts(
     texts: list[str],
-    model_name: str = "intfloat/multilingual-e5-small",
+    model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
 ) -> np.ndarray:
     """Encode texts into embeddings via HuggingFace Inference API.
 

@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileUploader } from "@/components/file-uploader";
+import { GscSiteSelector } from "@/components/gsc-site-selector";
 import { PipelineProgress } from "@/components/pipeline-progress";
 import { LinkReport } from "@/components/link-report";
 import { SitemapSelector } from "@/components/sitemap-selector";
@@ -119,14 +120,11 @@ export default function ProcessPage() {
                 onChange={(e) => setCurrentUrl(e.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>GSC Site (optional)</Label>
-              <Input
-                placeholder="sc-domain:example.com"
-                value={gscSite}
-                onChange={(e) => setGscSite(e.target.value)}
-              />
-            </div>
+            <GscSiteSelector
+              label="GSC Site (optional)"
+              value={gscSite}
+              onChange={setGscSite}
+            />
           </div>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm">

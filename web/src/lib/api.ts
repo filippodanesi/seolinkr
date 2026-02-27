@@ -166,6 +166,12 @@ export async function analyzeSitemap(
 
 /* ── GSC ─────────────────────────────────────────────────────── */
 
+export async function listGscProperties(): Promise<
+  { site_url: string; permission_level: string }[]
+> {
+  return fetchJSON("/gsc/properties");
+}
+
 export async function getOpportunities(
   siteUrl: string,
   days = 28,

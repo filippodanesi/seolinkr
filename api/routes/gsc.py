@@ -13,6 +13,16 @@ from api.deps import get_config, get_gsc_client
 router = APIRouter(tags=["gsc"])
 
 
+@router.get("/gsc/properties")
+def list_properties() -> list[dict[str, str]]:
+    """List all GSC properties accessible by the configured service account."""
+    config = get_config()
+    client = get_gsc_client(config)
+    if not client:
+        raise HTTPException(status_code=400, detail="GSC credentials not configured")
+    return client.list_properties()
+
+
 @router.get("/gsc/opportunities")
 def get_opportunities(
     site_url: str = Query(...),

@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { GscSiteSelector } from "@/components/gsc-site-selector";
 import { getCrossGaps } from "@/lib/api";
 import type { CrossLinkOpportunity } from "@/lib/types";
 
@@ -42,14 +43,11 @@ export default function CrossGapsPage() {
       <Card>
         <CardContent className="space-y-4 p-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>GSC Site URL</Label>
-              <Input
-                placeholder="sc-domain:example.com"
-                value={siteUrl}
-                onChange={(e) => setSiteUrl(e.target.value)}
-              />
-            </div>
+            <GscSiteSelector
+              label="GSC Site URL"
+              value={siteUrl}
+              onChange={setSiteUrl}
+            />
             <div className="space-y-1.5">
               <Label>URL Pattern</Label>
               <Input

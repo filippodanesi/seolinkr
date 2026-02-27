@@ -35,6 +35,7 @@ class GSCClient:
     """Google Search Console client with bulk fetch and caching.
 
     Designed for minimal API usage:
+    - list_properties: 1 API call (lists all GSC properties for the account)
     - get_page_metrics: 1 API call per site (paginated if >25K rows), cached 48h
     - get_magazine_queries: 1 API call per site+pattern, cached 48h
     - enrich_candidates: 0 API calls (local lookup on cached data)
@@ -48,6 +49,22 @@ class GSCClient:
     ):
         self._service = authenticate(service_account_path, oauth_client_secrets_path)
         self._cache = GSCCache(ttl_hours=cache_ttl_hours)
+
+    def list_properties(self) -> list[dict[str, str]]:
+        """List all GSC properties accessible by the authenticated account.
+
+        Returns:
+            List of dicts with 'siteUrl' and 'permissionLevel' keys.
+        """
+        response = self._service.sites().list().execute()
+        entries = response.get("siteEntry", [])
+        return [
+            {
+                "site_url": entry["siteUrl"],
+                "permission_level": entry.get("permissionLevel", "unknown"),
+            }
+            for entry in entries
+        ]
 
     def get_page_metrics(
         self, site_url: str, days: int = 28

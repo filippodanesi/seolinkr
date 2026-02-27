@@ -1,16 +1,11 @@
 // Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppSidebar from "@/components/shadcn-space/blocks/dashboard-shell-01/app-sidebar";
 import { ServerWarmup } from "@/components/server-warmup";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -29,9 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
-      >
+      <body className={`${jetbrainsMono.variable} antialiased`}>
         <TooltipProvider>
           <ServerWarmup>
             <AppSidebar>{children}</AppSidebar>

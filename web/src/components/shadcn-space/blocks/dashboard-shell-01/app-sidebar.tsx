@@ -12,15 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import Logo from "@/assets/logo/logo";
 import { NavMain } from "@/components/shadcn-space/blocks/dashboard-shell-01/nav-main";
-import {
-  CheckCircle2,
-  Link2,
-  LucideIcon,
-  Search,
-  Settings,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
+import { Settings } from "lucide-react";
 import { SiteHeader } from "@/components/shadcn-space/blocks/dashboard-shell-01/site-header";
 import SimpleBar from "simplebar-react";
 import "simplebar-react/dist/simplebar.min.css";
@@ -31,27 +23,18 @@ export type NavItem = {
   label?: string;
   isSection?: boolean;
   title?: string;
-  icon?: LucideIcon;
   href?: string;
-  children?: NavItem[];
-  isActive?: boolean;
 };
 
 export const navData: NavItem[] = [
   { label: "Linking", isSection: true },
-  { title: "Process Article", icon: Zap, href: "/process" },
-  { title: "Candidates", icon: Search, href: "/candidates" },
-  { title: "Audit", icon: CheckCircle2, href: "/audit" },
+  { title: "Process Article", href: "/process" },
+  { title: "Candidates", href: "/candidates" },
+  { title: "Audit", href: "/audit" },
 
   { label: "GSC Intelligence", isSection: true },
-  {
-    title: "Google Search Console",
-    icon: TrendingUp,
-    children: [
-      { title: "Opportunities", href: "/gsc/opportunities" },
-      { title: "Cross-Link Gaps", href: "/gsc/cross-gaps" },
-    ],
-  },
+  { title: "Opportunities", href: "/gsc/opportunities" },
+  { title: "Cross-Link Gaps", href: "/gsc/cross-gaps" },
 ];
 
 const AppSidebar = ({ children }: { children: React.ReactNode }) => {

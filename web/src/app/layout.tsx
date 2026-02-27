@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ApplicationShell } from "@/components/application-shell1";
+import AppSidebar from "@/components/shadcn-space/blocks/dashboard-shell-01/app-sidebar";
 import { ServerWarmup } from "@/components/server-warmup";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,7 +34,7 @@ export default function RootLayout({
       >
         <TooltipProvider>
           <ServerWarmup>
-            <ApplicationShell>{children}</ApplicationShell>
+            <AppSidebar>{children}</AppSidebar>
           </ServerWarmup>
         </TooltipProvider>
         <Toaster />

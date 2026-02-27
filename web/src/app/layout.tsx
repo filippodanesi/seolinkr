@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ApplicationShell } from "@/components/application-shell1";
+import { ServerWarmup } from "@/components/server-warmup";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -32,7 +33,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <TooltipProvider>
-          <ApplicationShell>{children}</ApplicationShell>
+          <ServerWarmup>
+            <ApplicationShell>{children}</ApplicationShell>
+          </ServerWarmup>
         </TooltipProvider>
         <Toaster />
       </body>

@@ -12,6 +12,17 @@ import type {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
+/* ── Health check ────────────────────────────────────────────── */
+
+export async function healthCheck(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, init);
   if (!res.ok) {

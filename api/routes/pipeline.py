@@ -78,7 +78,12 @@ async def process(
             data = asdict(result)
             # Read output file content if it exists
             if output_path.exists():
-                data["output_content"] = output_path.read_text(encoding="utf-8")
+                if output_path.suffix == ".docx":
+                    import docx
+                    doc = docx.Document(str(output_path))
+                    data["output_content"] = "\n".join(p.text for p in doc.paragraphs)
+                else:
+                    data["output_content"] = output_path.read_text(encoding="utf-8")
             return data
 
     async def event_stream():

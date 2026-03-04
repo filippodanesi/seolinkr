@@ -4,6 +4,8 @@
 import type {
   AppConfig,
   AuditResult,
+  BatchAuditResult,
+  BatchSSEEvent,
   CandidatePage,
   CrossLinkOpportunity,
   Opportunity,
@@ -139,6 +141,98 @@ export async function runPipeline(
     }
   }
   onDone();
+}
+
+/* ── Batch Pipeline (SSE) ────────────────────────────────────── */
+
+export async function runBatchPipeline(
+  files: File[],
+  sitemaps: string,
+  opts: {
+    maxLinks?: number;
+    topN?: number;
+    model?: string;
+    gscSite?: string;
+    brandGuidelines?: string;
+    enableRewrite?: boolean;
+    contentType?: string;
+    generateHtml?: boolean;
+    brandName?: string;
+    signal?: AbortSignal;
+  },
+  onEvent: (event: BatchSSEEvent) => void,
+  onDone: () => void
+): Promise<void> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  form.append("sitemaps", sitemaps);
+  if (opts.maxLinks) form.append("max_links", String(opts.maxLinks));
+  if (opts.topN) form.append("top_n", String(opts.topN));
+  if (opts.model) form.append("model", opts.model);
+  if (opts.gscSite) form.append("gsc_site", opts.gscSite);
+  if (opts.brandGuidelines)
+    form.append("brand_guidelines", opts.brandGuidelines);
+  if (opts.enableRewrite) form.append("enable_rewrite", "true");
+  if (opts.contentType) form.append("content_type", opts.contentType);
+  if (opts.generateHtml) form.append("generate_html", "true");
+  if (opts.brandName) form.append("brand_name", opts.brandName);
+
+  const res = await fetch(`${API_BASE}/batch-process`, {
+    method: "POST",
+    body: form,
+    signal: opts.signal,
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`API ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6);
+      if (payload === "[DONE]") {
+        onDone();
+        return;
+      }
+      try {
+        onEvent(JSON.parse(payload) as BatchSSEEvent);
+      } catch {
+        // skip malformed JSON
+      }
+    }
+  }
+  onDone();
+}
+
+/* ── Batch Audit ─────────────────────────────────────────────── */
+
+export async function batchAuditFiles(
+  files: File[],
+  siteDomain?: string
+): Promise<BatchAuditResult> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  if (siteDomain) form.append("site_domain", siteDomain);
+  return fetchJSON<BatchAuditResult>("/batch-audit", {
+    method: "POST",
+    body: form,
+  });
 }
 
 /* ── Sitemap ─────────────────────────────────────────────────── */

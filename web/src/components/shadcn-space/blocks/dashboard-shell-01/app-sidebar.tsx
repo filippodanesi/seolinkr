@@ -31,6 +31,10 @@ export const navData: NavItem[] = [
   { title: "Candidates", href: "/candidates" },
   { title: "Audit", href: "/audit" },
 
+  { label: "Batch", isSection: true },
+  { title: "Batch Process", href: "/batch-process" },
+  { title: "Batch Audit", href: "/batch-audit" },
+
   { label: "GSC Intelligence", isSection: true },
   { title: "Opportunities", href: "/gsc/opportunities" },
   { title: "Cross-Link Gaps", href: "/gsc/cross-gaps" },

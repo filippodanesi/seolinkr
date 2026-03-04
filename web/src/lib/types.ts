@@ -109,3 +109,82 @@ export interface SSEErrorEvent {
 }
 
 export type SSEEvent = SSELogEvent | SSEResultEvent | SSEErrorEvent;
+
+/* ── Batch models ────────────────────────────────────────────── */
+
+export interface FileResult {
+  filename: string;
+  status: "success" | "error";
+  error: string;
+  result: LinkingResult | null;
+}
+
+export interface BatchResult {
+  total_files: number;
+  succeeded: number;
+  failed: number;
+  file_results: FileResult[];
+  total_links_inserted: number;
+  total_sitemap_pages: number;
+}
+
+export interface FileAuditResult {
+  filename: string;
+  status: "success" | "error";
+  error: string;
+  result: AuditResult | null;
+}
+
+export interface BatchAuditResult {
+  total_files: number;
+  succeeded: number;
+  failed: number;
+  file_results: FileAuditResult[];
+  total_issues: number;
+  files_with_errors: number;
+  files_passing: number;
+}
+
+/* ── Batch SSE events ────────────────────────────────────────── */
+
+export interface SSEFileStartEvent {
+  type: "file_start";
+  file_index: number;
+  filename: string;
+  total_files: number;
+}
+
+export interface SSEFileLogEvent {
+  type: "file_log";
+  file_index: number;
+  filename: string;
+  message: string;
+}
+
+export interface SSEFileCompleteEvent {
+  type: "file_done";
+  file_index: number;
+  filename: string;
+  result: LinkingResult;
+}
+
+export interface SSEFileErrorEvent {
+  type: "file_error";
+  file_index: number;
+  filename: string;
+  error: string;
+}
+
+export interface SSEBatchSummaryEvent {
+  type: "batch_summary";
+  data: BatchResult;
+}
+
+export type BatchSSEEvent =
+  | SSELogEvent
+  | SSEErrorEvent
+  | SSEFileStartEvent
+  | SSEFileLogEvent
+  | SSEFileCompleteEvent
+  | SSEFileErrorEvent
+  | SSEBatchSummaryEvent;

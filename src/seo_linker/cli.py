@@ -464,6 +464,123 @@ def audit(file: Path, domain: str | None, fmt: str):
             click.echo("\n  No issues found")
 
 
+@cli.command("batch-process")
+@click.argument("directory", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--pattern", "-p", default="*.md", help="Glob pattern for input files (default: *.md)")
+@click.option("--files", "-f", "explicit_files", multiple=True, type=click.Path(exists=True, path_type=Path),
+              help="Explicit file paths (repeatable, overrides --pattern)")
+@click.option("--sitemap", "-s", "sitemaps", multiple=True, help="Sitemap URL or saved name (repeatable)")
+@click.option("--all-sitemaps", is_flag=True, default=False)
+@click.option("--max-links", type=int, default=None)
+@click.option("--top-n", type=int, default=None)
+@click.option("--model", default=None)
+@click.option("--gsc-site", default=None)
+@click.option("--rewrite/--no-rewrite", default=False)
+@click.option("--content-type", type=click.Choice(["existing_article", "rough_draft"]), default="existing_article")
+@click.option("--brand-guidelines", type=click.Path(exists=True, path_type=Path), default=None)
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text")
+def batch_process(
+    directory: Path,
+    pattern: str,
+    explicit_files: tuple[Path, ...],
+    sitemaps: tuple[str, ...],
+    all_sitemaps: bool,
+    max_links: int | None,
+    top_n: int | None,
+    model: str | None,
+    gsc_site: str | None,
+    rewrite: bool,
+    content_type: str,
+    brand_guidelines: Path | None,
+    fmt: str,
+):
+    """Batch process a directory of articles with shared sitemap fetch."""
+    from seo_linker.batch import run_batch_pipeline
+
+    config = Config.load()
+    sitemap_urls = _resolve_sitemaps(sitemaps, all_sitemaps, config)
+    if not sitemap_urls:
+        raise click.ClickException("No sitemaps specified.")
+
+    # Resolve file list
+    if explicit_files:
+        input_paths = list(explicit_files)
+    else:
+        input_paths = sorted(
+            p for p in directory.glob(pattern)
+            if "_linked" not in p.stem
+        )
+
+    if not input_paths:
+        raise click.ClickException(f"No files matching '{pattern}' in {directory}")
+
+    click.echo(f"Found {len(input_paths)} files to process")
+
+    bg_text = brand_guidelines.read_text(encoding="utf-8") if brand_guidelines else None
+
+    try:
+        result = run_batch_pipeline(
+            input_paths=input_paths,
+            sitemap_urls=sitemap_urls,
+            max_links=max_links or config.max_links,
+            top_n=top_n or config.top_n,
+            model=model,
+            config=config,
+            gsc_site=gsc_site,
+            brand_guidelines=bg_text,
+            enable_rewrite=rewrite,
+            content_type=content_type,
+        )
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+    if fmt == "json":
+        import json
+        from dataclasses import asdict
+        click.echo(json.dumps(asdict(result), indent=2))
+    else:
+        click.echo(f"\nSummary: {result.succeeded}/{result.total_files} succeeded, "
+                    f"{result.total_links_inserted} links inserted")
+
+
+@cli.command("batch-audit")
+@click.argument("directory", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--pattern", "-p", default="*_linked.md", help="Glob pattern (default: *_linked.md)")
+@click.option("--files", "-f", "explicit_files", multiple=True, type=click.Path(exists=True, path_type=Path))
+@click.option("--domain", default=None, help="Expected site domain")
+@click.option("--format", "fmt", type=click.Choice(["text", "json"]), default="text")
+def batch_audit(
+    directory: Path,
+    pattern: str,
+    explicit_files: tuple[Path, ...],
+    domain: str | None,
+    fmt: str,
+):
+    """Batch audit a directory of linked articles."""
+    from seo_linker.batch import run_batch_audit
+
+    if explicit_files:
+        input_paths = list(explicit_files)
+    else:
+        input_paths = sorted(directory.glob(pattern))
+
+    if not input_paths:
+        raise click.ClickException(f"No files matching '{pattern}' in {directory}")
+
+    click.echo(f"Auditing {len(input_paths)} files...")
+
+    result = run_batch_audit(input_paths, site_domain=domain)
+
+    if fmt == "json":
+        import json
+        from dataclasses import asdict
+        click.echo(json.dumps(asdict(result), indent=2))
+    else:
+        click.echo(f"\nSummary: {result.files_passing} passing, "
+                    f"{result.files_with_errors} with errors, "
+                    f"{result.total_issues} total issues")
+
+
 @cli.command("gsc-clear-cache")
 @click.option("--site", default=None, help="Clear cache for specific GSC site only")
 def gsc_clear_cache(site: str | None):

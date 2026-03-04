@@ -153,3 +153,53 @@ class LinkingResult:
     rewritten_text: str = ""
     seo_title: str = ""
     seo_meta_description: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Batch models
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class FileResult:
+    """Result of processing a single file in a batch."""
+
+    filename: str
+    status: str  # "success" | "error"
+    error: str = ""
+    result: LinkingResult | None = None
+
+
+@dataclass
+class BatchResult:
+    """Aggregate result of a batch processing run."""
+
+    total_files: int
+    succeeded: int
+    failed: int
+    file_results: list[FileResult] = field(default_factory=list)
+    total_links_inserted: int = 0
+    total_sitemap_pages: int = 0
+
+
+@dataclass
+class FileAuditResult:
+    """Result of auditing a single file in a batch."""
+
+    filename: str
+    status: str  # "success" | "error"
+    error: str = ""
+    result: object | None = None  # AuditResult from seo_linker.audit.checker
+
+
+@dataclass
+class BatchAuditResult:
+    """Aggregate result of a batch audit run."""
+
+    total_files: int
+    succeeded: int
+    failed: int
+    file_results: list[FileAuditResult] = field(default_factory=list)
+    total_issues: int = 0
+    files_with_errors: int = 0
+    files_passing: int = 0

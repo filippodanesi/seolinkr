@@ -150,6 +150,9 @@ async def batch_process(
             )
 
             summary = asdict(result)
+            # Replace temp filenames with original filenames
+            for fr in summary["file_results"]:
+                fr["filename"] = name_map.get(fr["filename"], fr["filename"])
             return summary
 
         finally:

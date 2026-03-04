@@ -17,7 +17,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <Card>
       <CardContent className="p-3 text-center">
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-2xl font-medium">{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
@@ -80,7 +80,7 @@ function FileAuditResultCard({
         <CollapsibleTrigger asChild>
           <button className="flex w-full items-center justify-between p-4 text-left">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium">{fr.filename}</h3>
+              <h3 className="text-sm">{fr.filename}</h3>
               <Badge variant={issueCount > 0 ? "secondary" : "outline"}>
                 {issueCount > 0 ? `${issueCount} issues` : "Passing"}
               </Badge>

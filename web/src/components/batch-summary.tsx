@@ -12,20 +12,39 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { LinkReport } from "@/components/link-report";
+import { downloadBase64File } from "@/lib/download";
 import type { BatchResult } from "@/lib/types";
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <Card>
       <CardContent className="p-3 text-center">
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-2xl font-medium">{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   );
 }
 
+function getDownloadableFiles(result: BatchResult) {
+  return result.file_results.filter(
+    (fr) =>
+      fr.status === "success" &&
+      fr.result?.output_base64 &&
+      fr.result?.output_filename
+  );
+}
+
+function handleDownloadAll(result: BatchResult) {
+  const files = getDownloadableFiles(result);
+  for (const fr of files) {
+    downloadBase64File(fr.result!.output_base64!, fr.result!.output_filename!);
+  }
+}
+
 export function BatchSummary({ result }: { result: BatchResult }) {
+  const downloadable = getDownloadableFiles(result);
+
   return (
     <div className="space-y-4">
       {/* Summary cards */}
@@ -35,6 +54,20 @@ export function BatchSummary({ result }: { result: BatchResult }) {
         <SummaryCard label="Failed" value={result.failed} />
         <SummaryCard label="Total Links" value={result.total_links_inserted} />
       </div>
+
+      {/* Download All */}
+      {downloadable.length > 0 && (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadAll(result)}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download All ({downloadable.length})
+          </Button>
+        </div>
+      )}
 
       {/* Per-file results */}
       {result.file_results.map((fr, i) => (
@@ -50,6 +83,7 @@ function FileResultCard({
   fr: BatchResult["file_results"][number];
 }) {
   const [open, setOpen] = useState(false);
+  const hasDownload = fr.result?.output_base64 && fr.result?.output_filename;
 
   if (fr.status === "error") {
     return (
@@ -75,14 +109,32 @@ function FileResultCard({
         <CollapsibleTrigger asChild>
           <button className="flex w-full items-center justify-between p-4 text-left">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium">{fr.filename}</h3>
+              <h3 className="text-sm">{fr.filename}</h3>
               <Badge variant="outline">
                 {fr.result.insertions.length} links
               </Badge>
             </div>
-            <ChevronDown
-              className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-            />
+            <div className="flex items-center gap-2">
+              {hasDownload && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadBase64File(
+                      fr.result!.output_base64!,
+                      fr.result!.output_filename!
+                    );
+                  }}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <ChevronDown
+                className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+              />
+            </div>
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>

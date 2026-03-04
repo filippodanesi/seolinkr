@@ -82,9 +82,7 @@ export function AuditResults({ result }: { result: AuditResult }) {
             <TableBody>
               {result.links.map((link, i) => (
                 <TableRow key={i}>
-                  <TableCell className="font-medium">
-                    {link.anchor_text}
-                  </TableCell>
+                  <TableCell>{link.anchor_text}</TableCell>
                   <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
                     {link.target_url}
                   </TableCell>
@@ -105,7 +103,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <Card>
       <CardContent className="p-3 text-center">
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-2xl font-medium">{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
       </CardContent>
     </Card>

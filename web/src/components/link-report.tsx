@@ -12,22 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { downloadBase64File } from "@/lib/download";
 import type { LinkingResult } from "@/lib/types";
-
-function handleDownload(base64: string, filename: string) {
-  const byteChars = atob(base64);
-  const byteNumbers = new Uint8Array(byteChars.length);
-  for (let i = 0; i < byteChars.length; i++) {
-    byteNumbers[i] = byteChars.charCodeAt(i);
-  }
-  const blob = new Blob([byteNumbers]);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 export function LinkReport({ result }: { result: LinkingResult }) {
   return (
@@ -40,11 +26,11 @@ export function LinkReport({ result }: { result: LinkingResult }) {
           </CardHeader>
           <CardContent className="space-y-1.5 text-sm">
             <div>
-              <span className="font-medium text-muted-foreground">Title: </span>
+              <span className="text-muted-foreground">Title: </span>
               {result.seo_title}
             </div>
             <div>
-              <span className="font-medium text-muted-foreground">Meta Description: </span>
+              <span className="text-muted-foreground">Meta Description: </span>
               {result.seo_meta_description}
             </div>
           </CardContent>
@@ -65,7 +51,7 @@ export function LinkReport({ result }: { result: LinkingResult }) {
               size="sm"
               variant="outline"
               onClick={() =>
-                handleDownload(result.output_base64!, result.output_filename!)
+                downloadBase64File(result.output_base64!, result.output_filename!)
               }
             >
               <Download className="mr-2 h-4 w-4" />
@@ -85,9 +71,7 @@ export function LinkReport({ result }: { result: LinkingResult }) {
             <TableBody>
               {result.insertions.map((ins, i) => (
                 <TableRow key={i}>
-                  <TableCell className="font-medium">
-                    {ins.anchor_text}
-                  </TableCell>
+                  <TableCell>{ins.anchor_text}</TableCell>
                   <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
                     {ins.target_url}
                   </TableCell>

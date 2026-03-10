@@ -119,8 +119,16 @@ async def batch_process(
 
                 linked_text = data.get("linked_text", "")
                 if linked_text:
-                    desktop_txt = markdown_to_pagedesigner(linked_text, "desktop")
-                    mobile_txt = markdown_to_pagedesigner(linked_text, "mobile")
+                    desktop_txt = markdown_to_pagedesigner(
+                        linked_text, "desktop",
+                        seo_title=data.get("seo_title", ""),
+                        seo_meta_description=data.get("seo_meta_description", ""),
+                    )
+                    mobile_txt = markdown_to_pagedesigner(
+                        linked_text, "mobile",
+                        seo_title=data.get("seo_title", ""),
+                        seo_meta_description=data.get("seo_meta_description", ""),
+                    )
                     data["desktop_txt_base64"] = base64.b64encode(
                         desktop_txt.encode("utf-8")
                     ).decode("ascii")

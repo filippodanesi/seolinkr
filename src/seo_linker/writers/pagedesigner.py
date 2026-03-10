@@ -17,6 +17,8 @@ _SIZES = {
 def markdown_to_pagedesigner(
     markdown: str,
     variant: Literal["desktop", "mobile"],
+    seo_title: str = "",
+    seo_meta_description: str = "",
 ) -> str:
     """Convert linked markdown to Page Designer richtext components (TXT)."""
     sizes = _SIZES[variant]
@@ -29,19 +31,32 @@ def markdown_to_pagedesigner(
 
     components: list[tuple[str, str]] = []
 
+    # Metadata
+    if seo_title or seo_meta_description:
+        meta_lines = []
+        if seo_title:
+            meta_lines.append(f"Title: {seo_title}")
+        if seo_meta_description:
+            meta_lines.append(f"Meta Description: {seo_meta_description}")
+        components.append(("METADATA", "\n".join(meta_lines)))
+
     # TOC
     if len(h2_entries) > 1:
-        components.append(("Table of Contents", _build_toc(h2_entries, sizes)))
+        components.append(("TABLE OF CONTENTS", _build_toc(h2_entries, sizes)))
 
     # Process each section
+    section_num = 0
     for sec in sections:
         if sec["heading"]:
+            section_num += 1
             h2_html = (
                 f'<h2 id="{sec["slug"]}" style="font-weight:400; '
                 f'font-size:{sizes["h2"]}; font-family: {_FF};">'
                 f"{_inline(sec['heading'])}</h2>"
             )
-            components.append(("H2", h2_html))
+            components.append(
+                (f"H2 - Section {section_num}: {sec['heading']}", h2_html)
+            )
 
         if sec["body"]:
             body_parts = _convert_body(sec["body"], sizes)
@@ -156,21 +171,21 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
                 html_parts.append("<br>")
 
         if has_table:
-            label = "Contains table and body text"
+            label = "BODY - Rich text with table and H3 tags"
         elif first_h3_seen:
-            label = "Normal body text with p and H3 tags"
+            label = "BODY - Rich text with p and H3 tags"
         else:
-            label = "Body text"
+            label = "BODY"
         components.append((label, "".join(html_parts)))
 
     # Trailing plain text components
     for typ, content in trailing:
         if typ == "table":
             components.append(
-                ("Table", _table_to_html(content, sizes["table_width"]))
+                ("BODY - Table", _table_to_html(content, sizes["table_width"]))
             )
         else:
-            components.append(("Body text", _inline(content)))
+            components.append(("BODY - Plain text", _inline(content)))
 
     return components
 
@@ -268,13 +283,10 @@ def _build_toc(entries: list[tuple[str, str]], sizes: dict) -> str:
 
 
 def _format_output(components: list[tuple[str, str]]) -> str:
-    """Format components into the final TXT output."""
+    """Format components into the final TXT output with HTML comment separators."""
     parts: list[str] = []
-    for i, (label, html) in enumerate(components):
-        if i > 0:
-            parts.append("=" * 60)
-        parts.append(label)
-        parts.append("")
+    for label, html in components:
+        parts.append(f"<!-- {label} -->")
         parts.append(html)
         parts.append("")
     return "\n".join(parts)

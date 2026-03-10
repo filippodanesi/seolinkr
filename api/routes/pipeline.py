@@ -95,8 +95,16 @@ async def process(
             import base64 as b64
             from seo_linker.writers.pagedesigner import markdown_to_pagedesigner
 
-            desktop_txt = markdown_to_pagedesigner(result.linked_text, "desktop")
-            mobile_txt = markdown_to_pagedesigner(result.linked_text, "mobile")
+            desktop_txt = markdown_to_pagedesigner(
+                result.linked_text, "desktop",
+                seo_title=result.seo_title,
+                seo_meta_description=result.seo_meta_description,
+            )
+            mobile_txt = markdown_to_pagedesigner(
+                result.linked_text, "mobile",
+                seo_title=result.seo_title,
+                seo_meta_description=result.seo_meta_description,
+            )
             data["desktop_txt_base64"] = b64.b64encode(
                 desktop_txt.encode("utf-8")
             ).decode("ascii")

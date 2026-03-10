@@ -113,8 +113,21 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
             classified.append(("h3", heading))
             if len(h3_lines) > 1 and h3_lines[1].strip():
                 classified.append(("text", h3_lines[1].strip()))
+        elif block.startswith("# ") and not block.startswith("## "):
+            # H1 heading
+            classified.append(("h1", block))
         elif "|" in block and block.strip().startswith("|"):
             classified.append(("table", block))
+        elif all(
+            re.match(r"^[-*]\s+", ln) for ln in block.split("\n") if ln.strip()
+        ):
+            classified.append(("list", block))
+        elif all(
+            re.match(r"^\d+\.\s+", ln)
+            for ln in block.split("\n")
+            if ln.strip()
+        ):
+            classified.append(("list", block))
         else:
             classified.append(("text", block))
 
@@ -149,9 +162,9 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
         has_table = False
 
         for typ, content in structured:
-            if typ == "text" and not first_h3_seen:
-                # Intro text — no wrapping
-                html_parts.append(_inline(content))
+            if typ in ("text", "h1", "list") and not first_h3_seen:
+                # Intro content — no <p> wrapping
+                html_parts.append(_block_to_html(content, sizes))
             elif typ == "h3":
                 if not first_h3_seen:
                     html_parts.append("<br>")
@@ -161,8 +174,10 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
                     f'line-height:40px; font-family: {_FF};">'
                     f"{_inline(content)}</h3>"
                 )
-            elif typ == "text":
-                html_parts.append(f"<p>{_inline(content)}</p>")
+            elif typ in ("text", "list"):
+                html_parts.append(f"<p>{_block_to_html(content, sizes)}</p>")
+            elif typ == "h1":
+                html_parts.append(_block_to_html(content, sizes))
             elif typ == "table":
                 has_table = True
                 html_parts.append(
@@ -178,14 +193,18 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
             label = "BODY"
         components.append((label, "".join(html_parts)))
 
-    # Trailing plain text components
+    # Trailing components
     for typ, content in trailing:
         if typ == "table":
             components.append(
                 ("BODY - Table", _table_to_html(content, sizes["table_width"]))
             )
+        elif typ == "h1":
+            components.append(("H1", _block_to_html(content, sizes)))
+        elif typ == "list":
+            components.append(("BODY - List", _block_to_html(content, sizes)))
         else:
-            components.append(("BODY - Plain text", _inline(content)))
+            components.append(("BODY", _block_to_html(content, sizes)))
 
     return components
 
@@ -194,7 +213,7 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
 
 
 def _inline(text: str) -> str:
-    """Process inline markdown: links, bold."""
+    """Convert ALL inline markdown to HTML."""
     # Convert markdown links [text](url "title") or [text](url) to <a> tags
     def _link_replace(m: re.Match) -> str:
         anchor = m.group(1)
@@ -208,9 +227,49 @@ def _inline(text: str) -> str:
         return f'<a href="{raw}">{anchor}</a>'
 
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link_replace, text)
-    # Convert **bold** to <strong>
+    # Convert **bold** to <strong> (must come before *italic*)
     text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    # Convert *italic* to <em>
+    text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", text)
     return text
+
+
+def _block_to_html(block: str, sizes: dict) -> str:
+    """Convert a full block of markdown text to HTML, handling all elements."""
+    lines = block.split("\n")
+
+    # Check if entire block is a bullet list
+    if all(re.match(r"^[-*]\s+", ln) for ln in lines if ln.strip()):
+        return _list_to_html(lines, ordered=False)
+
+    # Check if entire block is a numbered list
+    if all(re.match(r"^\d+\.\s+", ln) for ln in lines if ln.strip()):
+        return _list_to_html(lines, ordered=True)
+
+    # Check for H1 heading
+    h1_match = re.match(r"^#\s+(.+)", block)
+    if h1_match:
+        heading = h1_match.group(1).strip()
+        return (
+            f'<h1 style="font-weight:400; font-family: {_FF};">'
+            f"{_inline(heading)}</h1>"
+        )
+
+    # Regular text block — convert inline markdown
+    return _inline(block)
+
+
+def _list_to_html(lines: list[str], ordered: bool = False) -> str:
+    """Convert markdown list lines to HTML <ul> or <ol>."""
+    tag = "ol" if ordered else "ul"
+    items: list[str] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        # Strip bullet/number prefix
+        text = re.sub(r"^[-*]\s+", "", line) if not ordered else re.sub(r"^\d+\.\s+", "", line)
+        items.append(f"<li>{_inline(text.strip())}</li>")
+    return f"<{tag}>{''.join(items)}</{tag}>"
 
 
 # -- Table conversion --------------------------------------------------------

@@ -1,7 +1,7 @@
 // Copyright (c) 2025-2026 Filippo Danesi. All rights reserved.
 "use client";
 
-import { Download } from "lucide-react";
+import { Download, Monitor, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -46,18 +46,50 @@ export function LinkReport({ result }: { result: LinkingResult }) {
               ({result.insertions.length})
             </span>
           </CardTitle>
-          {result.output_base64 && result.output_filename && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                downloadBase64File(result.output_base64!, result.output_filename!)
-              }
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {result.output_base64 && result.output_filename && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  downloadBase64File(result.output_base64!, result.output_filename!)
+                }
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+            )}
+            {result.desktop_txt_base64 && result.desktop_txt_filename && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  downloadBase64File(
+                    result.desktop_txt_base64!,
+                    result.desktop_txt_filename!
+                  )
+                }
+              >
+                <Monitor className="mr-2 h-4 w-4" />
+                Desktop TXT
+              </Button>
+            )}
+            {result.mobile_txt_base64 && result.mobile_txt_filename && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  downloadBase64File(
+                    result.mobile_txt_base64!,
+                    result.mobile_txt_filename!
+                  )
+                }
+              >
+                <Smartphone className="mr-2 h-4 w-4" />
+                Mobile TXT
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

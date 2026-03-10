@@ -192,7 +192,12 @@ def _parse_response(response: str) -> tuple[str, list[LinkInsertion]]:
                 pass
 
     # Cross-check: verify reported insertions actually exist in the text
-    actual_links = set(re.findall(r"\[([^\]]+)\]\(([^)]+)\)", linked_text))
+    raw_links = re.findall(r"\[([^\]]+)\]\(([^)]+)\)", linked_text)
+    # Strip optional title from URL portion: 'url "title"' → 'url'
+    actual_links = set()
+    for anchor, raw_url in raw_links:
+        url = re.sub(r"""\s+["'].*["']\s*$""", "", raw_url.strip())
+        actual_links.add((anchor, url))
     verified: list[LinkInsertion] = []
     for ins in insertions:
         if any(url == ins.target_url for _, url in actual_links):

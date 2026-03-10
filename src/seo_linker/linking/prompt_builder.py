@@ -75,7 +75,9 @@ is discussed. Tables are a last resort for link placement.
 12. **Self-link prevention**: If a "current page URL" is provided, never link to it.
 13. **No homepage links**: Never link to a site's homepage (root URL ending in just "/"). \
 Only link to specific, deep pages.
-14. **Link format**: Use markdown link syntax: [anchor text](URL)
+14. **Link format**: Use markdown link syntax with a title attribute: [anchor text](URL "descriptive title"). \
+The title should be a short, accessible description of the target page (e.g. [running shoes](https://example.com/shoes/running "Shop running shoes for women")). \
+Keep titles concise (3-8 words), descriptive of the destination, and different from the anchor text.
 
 ### Human-sounding text (CRITICAL)
 When inserting links, you may need to lightly adjust surrounding text. If you do, \

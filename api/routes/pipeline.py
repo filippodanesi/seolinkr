@@ -90,6 +90,21 @@ async def process(
                 raw_bytes = output_path.read_bytes()
                 data["output_base64"] = base64.b64encode(raw_bytes).decode("ascii")
                 data["output_filename"] = f"{stem}_linked{suffix}"
+
+            # Generate Page Designer TXT variants (Desktop & Mobile)
+            import base64 as b64
+            from seo_linker.writers.pagedesigner import markdown_to_pagedesigner
+
+            desktop_txt = markdown_to_pagedesigner(result.linked_text, "desktop")
+            mobile_txt = markdown_to_pagedesigner(result.linked_text, "mobile")
+            data["desktop_txt_base64"] = b64.b64encode(
+                desktop_txt.encode("utf-8")
+            ).decode("ascii")
+            data["desktop_txt_filename"] = f"{stem}_desktop.txt"
+            data["mobile_txt_base64"] = b64.b64encode(
+                mobile_txt.encode("utf-8")
+            ).decode("ascii")
+            data["mobile_txt_filename"] = f"{stem}_mobile.txt"
             return data
 
     async def event_stream():

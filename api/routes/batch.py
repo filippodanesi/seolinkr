@@ -114,6 +114,22 @@ async def batch_process(
                     data["output_filename"] = f"{stem}_linked.{ext}"
                     temp_paths.append(out_path)
 
+                # Generate Page Designer TXT variants (Desktop & Mobile)
+                from seo_linker.writers.pagedesigner import markdown_to_pagedesigner
+
+                linked_text = data.get("linked_text", "")
+                if linked_text:
+                    desktop_txt = markdown_to_pagedesigner(linked_text, "desktop")
+                    mobile_txt = markdown_to_pagedesigner(linked_text, "mobile")
+                    data["desktop_txt_base64"] = base64.b64encode(
+                        desktop_txt.encode("utf-8")
+                    ).decode("ascii")
+                    data["desktop_txt_filename"] = f"{stem}_desktop.txt"
+                    data["mobile_txt_base64"] = base64.b64encode(
+                        mobile_txt.encode("utf-8")
+                    ).decode("ascii")
+                    data["mobile_txt_filename"] = f"{stem}_mobile.txt"
+
                 emit({
                     "type": "file_done",
                     "file_index": idx,

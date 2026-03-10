@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Download } from "lucide-react";
+import { ChevronDown, Download, Monitor, Smartphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,36 @@ function handleDownloadAll(result: BatchResult) {
   }
 }
 
+function handleDownloadAllDesktop(result: BatchResult) {
+  const files = result.file_results.filter(
+    (fr) =>
+      fr.status === "success" &&
+      fr.result?.desktop_txt_base64 &&
+      fr.result?.desktop_txt_filename
+  );
+  for (const fr of files) {
+    downloadBase64File(
+      fr.result!.desktop_txt_base64!,
+      fr.result!.desktop_txt_filename!
+    );
+  }
+}
+
+function handleDownloadAllMobile(result: BatchResult) {
+  const files = result.file_results.filter(
+    (fr) =>
+      fr.status === "success" &&
+      fr.result?.mobile_txt_base64 &&
+      fr.result?.mobile_txt_filename
+  );
+  for (const fr of files) {
+    downloadBase64File(
+      fr.result!.mobile_txt_base64!,
+      fr.result!.mobile_txt_filename!
+    );
+  }
+}
+
 export function BatchSummary({ result }: { result: BatchResult }) {
   const downloadable = getDownloadableFiles(result);
 
@@ -57,7 +87,7 @@ export function BatchSummary({ result }: { result: BatchResult }) {
 
       {/* Download All */}
       {downloadable.length > 0 && (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -65,6 +95,22 @@ export function BatchSummary({ result }: { result: BatchResult }) {
           >
             <Download className="mr-2 h-4 w-4" />
             Download All ({downloadable.length})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadAllDesktop(result)}
+          >
+            <Monitor className="mr-2 h-4 w-4" />
+            All Desktop TXT
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadAllMobile(result)}
+          >
+            <Smartphone className="mr-2 h-4 w-4" />
+            All Mobile TXT
           </Button>
         </div>
       )}
@@ -84,6 +130,10 @@ function FileResultCard({
 }) {
   const [open, setOpen] = useState(false);
   const hasDownload = fr.result?.output_base64 && fr.result?.output_filename;
+  const hasDesktop =
+    fr.result?.desktop_txt_base64 && fr.result?.desktop_txt_filename;
+  const hasMobile =
+    fr.result?.mobile_txt_base64 && fr.result?.mobile_txt_filename;
 
   if (fr.status === "error") {
     return (
@@ -129,6 +179,40 @@ function FileResultCard({
                   }}
                 >
                   <Download className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {hasDesktop && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  title="Desktop TXT"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadBase64File(
+                      fr.result!.desktop_txt_base64!,
+                      fr.result!.desktop_txt_filename!
+                    );
+                  }}
+                >
+                  <Monitor className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {hasMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  title="Mobile TXT"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadBase64File(
+                      fr.result!.mobile_txt_base64!,
+                      fr.result!.mobile_txt_filename!
+                    );
+                  }}
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
                 </Button>
               )}
               <ChevronDown

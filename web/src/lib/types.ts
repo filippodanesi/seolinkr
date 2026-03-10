@@ -56,6 +56,10 @@ export interface LinkingResult {
   output_content?: string;
   output_base64?: string;
   output_filename?: string;
+  desktop_txt_base64?: string;
+  desktop_txt_filename?: string;
+  mobile_txt_base64?: string;
+  mobile_txt_filename?: string;
 }
 
 export interface Opportunity {

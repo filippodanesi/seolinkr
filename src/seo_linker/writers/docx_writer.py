@@ -15,14 +15,23 @@ from docx.shared import Pt, RGBColor
 from seo_linker.models import LinkingResult
 from seo_linker.writers.base import BaseWriter
 
-# Pattern to find markdown links
+# Pattern to find markdown links: [text](url) or [text](url "title")
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+# Pattern to strip optional title from URL portion
+TITLE_RE = re.compile(r"""^(\S+)\s+["'].*["']\s*$""")
 # Pattern to detect markdown headings
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)")
 # Pattern to detect **bold** spans
 BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 # Markdown table separator row (e.g. |---|---|)
 TABLE_SEP_RE = re.compile(r"^\|[\s\-:|]+\|$")
+
+
+def _extract_url(raw: str) -> str:
+    """Extract URL from raw link target, stripping optional title."""
+    raw = raw.strip()
+    m = TITLE_RE.match(raw)
+    return m.group(1) if m else raw
 
 
 class DocxWriter(BaseWriter):
@@ -128,7 +137,7 @@ def _populate_paragraph_with_links(
         if before:
             _add_formatted_runs(para, before, font_name, font_size)
 
-        _add_hyperlink(para, match.group(1), match.group(2))
+        _add_hyperlink(para, match.group(1), _extract_url(match.group(2)))
         last_end = match.end()
 
     remaining = text[last_end:]
@@ -243,7 +252,7 @@ def _replace_paragraph_with_links(para, linked_text: str) -> None:
             _add_run(para, before)
 
         anchor = match.group(1)
-        url = match.group(2)
+        url = _extract_url(match.group(2))
         _add_hyperlink(para, anchor, url)
         last_end = match.end()
 

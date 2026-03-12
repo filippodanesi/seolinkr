@@ -43,6 +43,10 @@ def link_plp_html(
     response = _call_claude(api_key, model, user_prompt, system_prompt)
     linked_html, insertions = _parse_html_response(response)
 
+    # Normalize all hrefs to absolute URLs
+    if current_url:
+        linked_html = _normalize_urls(linked_html, current_url)
+
     # Ensure every <a> has a title attribute — fallback to candidate page title
     linked_html = _ensure_title_attrs(linked_html, candidate_pages)
 
@@ -102,6 +106,24 @@ def _parse_html_response(response: str) -> tuple[str, list[LinkInsertion]]:
     verified = [ins for ins in insertions if ins.target_url in actual_links]
 
     return linked_html, verified
+
+
+def _normalize_urls(html: str, current_url: str) -> str:
+    """Convert relative hrefs to absolute URLs based on the current page's domain."""
+    from urllib.parse import urlparse, urljoin
+
+    parsed = urlparse(current_url)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+
+    def _make_absolute(match: re.Match) -> str:
+        quote = match.group(1)
+        href = match.group(2)
+        if href.startswith(("http://", "https://")):
+            return match.group(0)
+        absolute = urljoin(base, href)
+        return f'href={quote}{absolute}{quote}'
+
+    return re.sub(r'href=(["\'])([^"\']+)\1', _make_absolute, html)
 
 
 def _ensure_title_attrs(html: str, candidate_pages: list[TargetPage]) -> str:

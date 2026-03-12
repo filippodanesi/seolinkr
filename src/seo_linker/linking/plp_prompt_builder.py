@@ -39,27 +39,38 @@ Never rewrite sentences to create anchors.
 9. **Adaptive density**: Insert 2-5 links per content block. Short blocks (1-2 \
 paragraphs) get 2-3 links; longer blocks get 3-5.
 10. **Body text only**: Never add links inside headings (<h2>, <h3> tags).
-11. **Max 1 link per sentence**, max 2 per paragraph.
-12. **Self-link prevention**: If a "current page URL" is provided, never link to it.
-13. **No homepage links**: Never link to the site root URL.
+11. **Max 1 link per sentence**, **max 2 per paragraph**. NEVER put 3+ links in a single paragraph.
+12. **Spread links evenly**: Distribute links across the full text. Do NOT cluster \
+multiple links in one paragraph while leaving other paragraphs empty. If a paragraph \
+mentions a topic that matches a candidate page, that's where the link belongs — not \
+in a catch-all closing paragraph.
+13. **Self-link prevention**: If a "current page URL" is provided, never link to it.
+14. **No homepage links**: Never link to the site root URL.
 
 ### HTML integrity
-14. **Preserve HTML structure**: Do not change the HTML structure, tags, or attributes. \
+15. **Preserve HTML structure**: Do not change the HTML structure, tags, or attributes. \
 Only add <a> tags within existing text content.
-15. **Valid HTML**: Ensure all <a> tags are properly opened and closed.
-16. **No nested links**: Never place an <a> tag inside another <a> tag.
+16. **Valid HTML**: Ensure all <a> tags are properly opened and closed.
+17. **No nested links**: Never place an <a> tag inside another <a> tag.
 
 ### Human-sounding text (CRITICAL)
-17. Do NOT rewrite or "improve" the existing text. Only wrap existing phrases in <a> \
+18. Do NOT rewrite or "improve" the existing text. Only wrap existing phrases in <a> \
 tags. The surrounding text must remain EXACTLY as provided.
-18. **Banned AI vocabulary**: never use delve, crucial, pivotal, landscape (figurative), \
+19. **Never add transitional sentences to justify links**. Do NOT insert phrases like \
+"Du suchst noch nach anderen...", "Entdecke auch...", "Schau dir an..." just to \
+create a place for links. If a suitable anchor phrase doesn't already exist in the \
+text, skip that link.
+20. **Anchor text must be specific**: Avoid generic anchors like "BH-Formen", "hier", \
+"mehr erfahren". The anchor should describe the target page specifically \
+(e.g., "Push-up BHs" not "andere BH-Formen").
+21. **Banned AI vocabulary**: never use delve, crucial, pivotal, landscape (figurative), \
 tapestry, vibrant, intricate, foster, garner, underscore, showcase, testament, \
 enduring, enhance, align with, resonate with, groundbreaking, renowned, encompass.
 
 ### GSC data awareness
-19. **Prioritize pages with position 4-15** — they benefit most from link equity.
-20. **Use GSC top queries as relevance signals** — overlapping queries indicate semantic fit.
-21. **GSC data is supplementary** — proceed with semantic relevance if no GSC data.
+22. **Prioritize pages with position 4-15** — they benefit most from link equity.
+23. **Use GSC top queries as relevance signals** — overlapping queries indicate semantic fit.
+24. **GSC data is supplementary** — proceed with semantic relevance if no GSC data.
 
 ## Output format
 

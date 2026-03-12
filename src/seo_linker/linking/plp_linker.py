@@ -130,14 +130,16 @@ def _ensure_title_attrs(html: str, candidate_pages: list[TargetPage]) -> str:
     """Add missing title attributes to <a> tags using candidate page titles."""
     from urllib.parse import urlparse
 
-    # Build URL → title lookup (both full URL and path-only)
+    # Build URL → clean title lookup (both full URL and path-only)
     title_map: dict[str, str] = {}
     for page in candidate_pages:
         if page.title:
-            title_map[page.url] = page.title
-            parsed = urlparse(page.url)
-            if parsed.path:
-                title_map[parsed.path] = page.title
+            clean = _clean_page_title(page.title)
+            if clean:
+                title_map[page.url] = clean
+                parsed = urlparse(page.url)
+                if parsed.path:
+                    title_map[parsed.path] = clean
 
     def _add_title(match: re.Match) -> str:
         tag = match.group(0)
@@ -152,14 +154,29 @@ def _ensure_title_attrs(html: str, candidate_pages: list[TargetPage]) -> str:
         # Look up title from candidates
         title = title_map.get(href)
         if not title:
-            # Try path only
             parsed = urlparse(href)
             title = title_map.get(parsed.path)
         if not title:
             return tag
-        # Escape quotes in title
         safe_title = title.replace('"', '&quot;')
-        # Insert title after href
-        return tag[:href_match.end() + 1] + f' title="{safe_title}"' + tag[href_match.end() + 1:]
+        # Insert title before the closing > of the tag
+        return tag[:href_match.end()] + f' title="{safe_title}"' + tag[href_match.end():]
 
     return re.sub(r'<a\s[^>]*>', _add_title, html)
+
+
+def _clean_page_title(title: str) -> str:
+    """Clean a page <title> for use as a link title attribute.
+
+    Removes brand suffixes like '| Triumph', '[CATEGORY] im offiziellen...',
+    and other boilerplate.
+    """
+    # Remove patterns like "[SHAPEWEAR] im offiziellen Triumph® Online Shop"
+    title = re.sub(r'\[.*?\]\s*im\s+offiziellen.*$', '', title, flags=re.IGNORECASE).strip()
+    # Remove "| Triumph", "- Triumph", "| Brand" suffixes
+    title = re.sub(r'\s*[|–—-]\s*(Triumph|triumph).*$', '', title).strip()
+    # Remove "im offiziellen Triumph® Online Shop" standalone
+    title = re.sub(r'\s*im\s+offiziellen\s+Triumph.*$', '', title, flags=re.IGNORECASE).strip()
+    # Remove "® " and "™"
+    title = title.replace('®', '').replace('™', '').strip()
+    return title

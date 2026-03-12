@@ -50,6 +50,9 @@ def link_plp_html(
     # Ensure every <a> has a title attribute — fallback to candidate page title
     linked_html = _ensure_title_attrs(linked_html, candidate_pages)
 
+    # Verify all linked URLs return 200 — remove broken links
+    linked_html, insertions = _remove_broken_links(linked_html, insertions)
+
     return linked_html, insertions
 
 
@@ -180,3 +183,59 @@ def _clean_page_title(title: str) -> str:
     # Remove "® " and "™"
     title = title.replace('®', '').replace('™', '').strip()
     return title
+
+
+def _remove_broken_links(
+    html: str, insertions: list[LinkInsertion]
+) -> tuple[str, list[LinkInsertion]]:
+    """Check all <a> hrefs return HTTP 200. Remove links that don't.
+
+    Broken links are unwrapped: the <a> tag is removed but the anchor
+    text is preserved so the content reads naturally.
+    """
+    import logging
+    import requests
+
+    logger = logging.getLogger(__name__)
+
+    # Extract all unique hrefs from the HTML
+    hrefs = set(re.findall(r'<a\s[^>]*href=["\']([^"\']+)["\']', html))
+    if not hrefs:
+        return html, insertions
+
+    # Check each URL (HEAD request with short timeout)
+    broken: set[str] = set()
+    session = requests.Session()
+    session.headers.update({"User-Agent": "SEOLinkr/1.0 (link-checker)"})
+
+    for url in hrefs:
+        if not url.startswith(("http://", "https://")):
+            continue
+        try:
+            resp = session.head(url, timeout=8, allow_redirects=True)
+            if resp.status_code != 200:
+                logger.warning("Broken link removed: %s → HTTP %d", url, resp.status_code)
+                broken.add(url)
+        except Exception as e:
+            logger.warning("Broken link removed: %s → %s", url, e)
+            broken.add(url)
+
+    session.close()
+
+    if not broken:
+        return html, insertions
+
+    # Unwrap broken <a> tags — keep anchor text, remove the tag
+    for url in broken:
+        escaped = re.escape(url)
+        html = re.sub(
+            rf'<a\s[^>]*href=["\']{ escaped }["\'][^>]*>(.*?)</a>',
+            r'\1',
+            html,
+        )
+
+    # Filter insertions report
+    valid = [ins for ins in insertions if ins.target_url not in broken]
+
+    logger.info("Link check: %d OK, %d broken removed", len(hrefs) - len(broken), len(broken))
+    return html, valid

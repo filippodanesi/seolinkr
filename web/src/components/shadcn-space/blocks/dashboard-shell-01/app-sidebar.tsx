@@ -28,6 +28,8 @@ export type NavItem = {
 export const navData: NavItem[] = [
   { label: "Linking", isSection: true },
   { title: "Process Article", href: "/process" },
+  { title: "Process PLPs", href: "/process-plps" },
+  { title: "Link Map", href: "/link-map" },
   { title: "Candidates", href: "/candidates" },
   { title: "Audit", href: "/audit" },
 

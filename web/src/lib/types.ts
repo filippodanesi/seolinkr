@@ -192,3 +192,66 @@ export type BatchSSEEvent =
   | SSEFileCompleteEvent
   | SSEFileErrorEvent
   | SSEBatchSummaryEvent;
+
+/* ── PLP Batch models ───────────────────────────────────────── */
+
+export interface PLPLinkingResult {
+  row_index: number;
+  url: string;
+  original_html: string;
+  linked_html: string;
+  insertions: LinkInsertion[];
+}
+
+export interface PLPBatchResult {
+  total_rows: number;
+  succeeded: number;
+  failed: number;
+  total_links_inserted: number;
+  row_results: PLPLinkingResult[];
+  output_path: string;
+  output_base64?: string;
+  output_filename?: string;
+}
+
+export interface SSEPLPResultEvent {
+  type: "result";
+  data: PLPBatchResult;
+}
+
+export type PLPSSEEvent = SSELogEvent | SSEPLPResultEvent | SSEErrorEvent;
+
+/* ── Link Map models ────────────────────────────────────────── */
+
+export interface LinkMapEntry {
+  source_url: string;
+  target_url: string;
+  shared_queries: string[];
+  shared_query_count: number;
+  source_impressions: number;
+  target_impressions: number;
+  source_position: number;
+  target_position: number;
+  relevance_score: number;
+  priority: string;
+  reasoning: string;
+}
+
+export interface LinkMapResult {
+  total_urls: number;
+  total_recommendations: number;
+  entries: LinkMapEntry[];
+  output_path: string;
+  output_base64?: string;
+  output_filename?: string;
+}
+
+export interface SSELinkMapResultEvent {
+  type: "result";
+  data: LinkMapResult;
+}
+
+export type LinkMapSSEEvent =
+  | SSELogEvent
+  | SSELinkMapResultEvent
+  | SSEErrorEvent;

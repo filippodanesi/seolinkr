@@ -203,3 +203,75 @@ class BatchAuditResult:
     total_issues: int = 0
     files_with_errors: int = 0
     files_passing: int = 0
+
+
+# ---------------------------------------------------------------------------
+# PLP Batch models
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class PLPRow:
+    """A single PLP row from the XLSX with URL, content columns, and metadata."""
+
+    row_index: int
+    url: str
+    content_html: str  # The HTML content to inject links into
+    column_name: str = ""  # Which column this came from (e.g. "Bottom SEO Text")
+    target_keyword: str = ""
+    related_keywords: str = ""
+
+
+@dataclass
+class PLPLinkingResult:
+    """Result of processing a single PLP row."""
+
+    row_index: int
+    url: str
+    original_html: str
+    linked_html: str
+    insertions: list[LinkInsertion] = field(default_factory=list)
+
+
+@dataclass
+class PLPBatchResult:
+    """Aggregate result of PLP batch processing."""
+
+    total_rows: int
+    succeeded: int
+    failed: int
+    total_links_inserted: int = 0
+    row_results: list[PLPLinkingResult] = field(default_factory=list)
+    output_path: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Link Map / Strategy models
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class LinkMapEntry:
+    """A strategic internal link recommendation."""
+
+    source_url: str
+    target_url: str
+    shared_queries: list[str] = field(default_factory=list)
+    shared_query_count: int = 0
+    source_impressions: int = 0
+    target_impressions: int = 0
+    source_position: float = 0.0
+    target_position: float = 0.0
+    relevance_score: float = 0.0
+    priority: str = ""  # "critical", "high", "medium", "low"
+    reasoning: str = ""
+
+
+@dataclass
+class LinkMapResult:
+    """Result of the strategic link map generation."""
+
+    total_urls: int
+    total_recommendations: int
+    entries: list[LinkMapEntry] = field(default_factory=list)
+    output_path: str = ""

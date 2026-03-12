@@ -591,5 +591,176 @@ def gsc_clear_cache(site: str | None):
     click.echo(f"Cleared {count} cached file(s)")
 
 
+# ---------------------------------------------------------------------------
+# PLP Batch mode
+# ---------------------------------------------------------------------------
+
+@cli.command("process-plps")
+@click.argument("file", type=click.Path(exists=True, path_type=Path))
+@click.option("--sitemap", "-s", "sitemaps", multiple=True, help="Sitemap XML URL (repeatable, or saved name)")
+@click.option("--all-sitemaps", is_flag=True, default=False, help="Use all saved sitemaps")
+@click.option("--output", "-o", type=click.Path(path_type=Path), default=None, help="Output XLSX path")
+@click.option("--sheet-name", default=None, help="Sheet to read (default: active sheet)")
+@click.option("--url-col", default=None, help="Column letter for URL (e.g. B). Auto-detected if omitted.")
+@click.option("--content-col", default=None, help="Column letter for HTML content (e.g. U). Auto-detected if omitted.")
+@click.option("--keyword-col", default=None, help="Column letter for target keyword (e.g. M). Auto-detected if omitted.")
+@click.option("--related-kw-col", default=None, help="Column letter for related keywords (e.g. N). Auto-detected if omitted.")
+@click.option("--max-links", type=int, default=5, help="Max links per PLP content block (default: 5)")
+@click.option("--top-n", type=int, default=25, help="Candidate pages per PLP (default: 25)")
+@click.option("--model", default=None, help="Claude model to use")
+@click.option("--gsc-site", default=None, help="GSC property for enrichment")
+@click.option("--brand-guidelines", type=click.Path(exists=True, path_type=Path), default=None,
+              help="Brand guidelines file")
+def process_plps(
+    file: Path,
+    sitemaps: tuple[str, ...],
+    all_sitemaps: bool,
+    output: Path | None,
+    sheet_name: str | None,
+    url_col: str | None,
+    content_col: str | None,
+    keyword_col: str | None,
+    related_kw_col: str | None,
+    max_links: int,
+    top_n: int,
+    model: str | None,
+    gsc_site: str | None,
+    brand_guidelines: Path | None,
+):
+    """Inject internal links into PLP SEO text blocks (XLSX with HTML content).
+
+    Reads an XLSX file with PLP URLs and HTML content columns (e.g., "Bottom SEO Text"),
+    injects internal links using AI, and outputs a new XLSX with a "Linked Content" column.
+
+    Example:
+        seo-linker process-plps plan.xlsx --sitemap triumph --content-col U --url-col B --gsc-site sc-domain:triumph.com
+    """
+    from seo_linker.plp_pipeline import run_plp_pipeline
+
+    config = Config.load()
+    sitemap_urls = _resolve_sitemaps(sitemaps, all_sitemaps, config)
+
+    if not sitemap_urls:
+        raise click.ClickException("No sitemaps specified.")
+
+    bg_text = brand_guidelines.read_text(encoding="utf-8") if brand_guidelines else None
+
+    try:
+        run_plp_pipeline(
+            input_path=file,
+            sitemap_urls=sitemap_urls,
+            output_path=output,
+            sheet_name=sheet_name,
+            url_col=url_col,
+            content_col=content_col,
+            keyword_col=keyword_col,
+            related_kw_col=related_kw_col,
+            max_links=max_links,
+            top_n=top_n,
+            model=model,
+            config=config,
+            gsc_site=gsc_site,
+            brand_guidelines=bg_text,
+        )
+    except (ValueError, Exception) as e:
+        raise click.ClickException(str(e))
+
+
+# ---------------------------------------------------------------------------
+# Link Map / Strategy mode
+# ---------------------------------------------------------------------------
+
+@cli.command("link-map")
+@click.option("--gsc-site", required=True, help="GSC property (e.g. sc-domain:triumph.com)")
+@click.option("--urls-file", type=click.Path(exists=True, path_type=Path), default=None,
+              help="XLSX or text file with URLs to analyze (one per line, or URL column in XLSX)")
+@click.option("--urls", "url_list", default=None,
+              help="Comma-separated URLs to analyze")
+@click.option("--url-pattern", default=None,
+              help="Regex to filter pages (e.g. '/collections/|/magazine/')")
+@click.option("--output", "-o", type=click.Path(path_type=Path), default=None, help="Output XLSX path")
+@click.option("--days", default=90, help="Lookback window in days (default: 90)")
+@click.option("--min-shared", default=1, help="Min shared queries (default: 1)")
+@click.option("--format", "fmt", type=click.Choice(["xlsx", "json"]), default="xlsx")
+def link_map(
+    gsc_site: str,
+    urls_file: Path | None,
+    url_list: str | None,
+    url_pattern: str | None,
+    output: Path | None,
+    days: int,
+    min_shared: int,
+    fmt: str,
+):
+    """Generate a strategic internal link map based on GSC query overlap.
+
+    Analyzes which pages share search queries and recommends cross-linking
+    opportunities. Outputs an XLSX with priorities, shared queries, and
+    a ready-to-paste "Col E" format.
+
+    Examples:
+        seo-linker link-map --gsc-site sc-domain:triumph.com --url-pattern "/collections/"
+        seo-linker link-map --gsc-site https://hk.triumph.com/ --urls-file plps.xlsx
+    """
+    from seo_linker.link_map_pipeline import run_link_map_pipeline
+
+    config = Config.load()
+
+    # Resolve URL list
+    urls: list[str] = []
+    if url_list:
+        urls = [u.strip() for u in url_list.split(",") if u.strip()]
+    elif urls_file:
+        urls = _load_urls_from_file(urls_file)
+
+    if not urls and not url_pattern:
+        raise click.ClickException(
+            "Provide --urls, --urls-file, or --url-pattern to specify which pages to analyze."
+        )
+
+    if output is None:
+        output = Path("link_map.xlsx")
+
+    try:
+        result = run_link_map_pipeline(
+            urls=urls,
+            gsc_site=gsc_site,
+            output_path=output if fmt == "xlsx" else None,
+            url_pattern=url_pattern,
+            days=days,
+            min_shared_queries=min_shared,
+            config=config,
+        )
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+    if fmt == "json":
+        import json
+        from dataclasses import asdict
+        click.echo(json.dumps(asdict(result), indent=2))
+    else:
+        click.echo(f"\nLink map: {result.total_recommendations} recommendations for {result.total_urls} URLs")
+
+
+def _load_urls_from_file(file_path: Path) -> list[str]:
+    """Load URLs from a text file (one per line) or XLSX (first URL-like column)."""
+    if file_path.suffix.lower() == ".xlsx":
+        from openpyxl import load_workbook
+        wb = load_workbook(str(file_path), read_only=True)
+        ws = wb.active
+        urls = []
+        for row in ws.iter_rows(values_only=True):
+            for cell in row:
+                if cell and str(cell).strip().startswith("http"):
+                    urls.append(str(cell).strip())
+                    break  # Take first URL-like cell per row
+        wb.close()
+        return urls
+    else:
+        # Plain text file
+        text = file_path.read_text(encoding="utf-8")
+        return [line.strip() for line in text.splitlines() if line.strip().startswith("http")]
+
+
 if __name__ == "__main__":
     cli()

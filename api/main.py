@@ -71,7 +71,7 @@ _check_config()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import audit, batch, candidates, config, gsc, pipeline, sitemap
+from api.routes import audit, batch, candidates, config, gsc, link_map, pipeline, plp, sitemap
 
 app = FastAPI(
     title="SEO Internal Linker API",
@@ -99,6 +99,8 @@ app.include_router(candidates.router, prefix="/api")
 app.include_router(config.router, prefix="/api")
 app.include_router(gsc.router, prefix="/api")
 app.include_router(pipeline.router, prefix="/api")
+app.include_router(plp.router, prefix="/api")
+app.include_router(link_map.router, prefix="/api")
 app.include_router(sitemap.router, prefix="/api")
 
 

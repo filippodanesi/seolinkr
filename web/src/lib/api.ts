@@ -8,7 +8,9 @@ import type {
   BatchSSEEvent,
   CandidatePage,
   CrossLinkOpportunity,
+  LinkMapSSEEvent,
   Opportunity,
+  PLPSSEEvent,
   SSEEvent,
 } from "./types";
 
@@ -292,6 +294,122 @@ export async function getCrossGaps(
     min_shared_queries: String(minSharedQueries),
   });
   return fetchJSON<CrossLinkOpportunity[]>(`/gsc/cross-gaps?${params}`);
+}
+
+/* ── PLP Pipeline (SSE) ──────────────────────────────────────── */
+
+export async function runPLPPipeline(
+  file: File,
+  sitemaps: string,
+  opts: {
+    maxLinks?: number;
+    topN?: number;
+    model?: string;
+    gscSite?: string;
+    sheetName?: string;
+    urlCol?: string;
+    contentCol?: string;
+    keywordCol?: string;
+    relatedKwCol?: string;
+    signal?: AbortSignal;
+  },
+  onEvent: (event: PLPSSEEvent) => void,
+  onDone: () => void
+): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("sitemaps", sitemaps);
+  if (opts.maxLinks) form.append("max_links", String(opts.maxLinks));
+  if (opts.topN) form.append("top_n", String(opts.topN));
+  if (opts.model) form.append("model", opts.model);
+  if (opts.gscSite) form.append("gsc_site", opts.gscSite);
+  if (opts.sheetName) form.append("sheet_name", opts.sheetName);
+  if (opts.urlCol) form.append("url_col", opts.urlCol);
+  if (opts.contentCol) form.append("content_col", opts.contentCol);
+  if (opts.keywordCol) form.append("keyword_col", opts.keywordCol);
+  if (opts.relatedKwCol) form.append("related_kw_col", opts.relatedKwCol);
+
+  const res = await fetch(`${API_BASE}/process-plps`, {
+    method: "POST",
+    body: form,
+    signal: opts.signal,
+  });
+
+  if (!res.ok || !res.body) throw new Error(`API ${res.status}`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6);
+      if (payload === "[DONE]") { onDone(); return; }
+      try { onEvent(JSON.parse(payload) as PLPSSEEvent); } catch {}
+    }
+  }
+  onDone();
+}
+
+/* ── Link Map (SSE) ──────────────────────────────────────────── */
+
+export async function runLinkMap(
+  gscSite: string,
+  opts: {
+    urls?: string;
+    urlsFile?: File;
+    urlPattern?: string;
+    days?: number;
+    minShared?: number;
+    signal?: AbortSignal;
+  },
+  onEvent: (event: LinkMapSSEEvent) => void,
+  onDone: () => void
+): Promise<void> {
+  const form = new FormData();
+  form.append("gsc_site", gscSite);
+  if (opts.urls) form.append("urls", opts.urls);
+  if (opts.urlsFile) form.append("urls_file", opts.urlsFile);
+  if (opts.urlPattern) form.append("url_pattern", opts.urlPattern);
+  if (opts.days) form.append("days", String(opts.days));
+  if (opts.minShared) form.append("min_shared", String(opts.minShared));
+
+  const res = await fetch(`${API_BASE}/link-map`, {
+    method: "POST",
+    body: form,
+    signal: opts.signal,
+  });
+
+  if (!res.ok || !res.body) throw new Error(`API ${res.status}`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6);
+      if (payload === "[DONE]") { onDone(); return; }
+      try { onEvent(JSON.parse(payload) as LinkMapSSEEvent); } catch {}
+    }
+  }
+  onDone();
 }
 
 /* ── Config ──────────────────────────────────────────────────── */

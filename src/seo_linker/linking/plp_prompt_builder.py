@@ -34,7 +34,10 @@ if they cover topics mentioned in the text (e.g., sizing guides, style tips).
 
 ### Anchor text & HTML format
 6. **Use <a> tags with title**: ALWAYS insert links as `<a href="URL" title="descriptive title">anchor text</a>`. \
-The `title` attribute is MANDATORY on every link — use a short, descriptive phrase about the target page.
+The `title` attribute is MANDATORY on every single link — no exceptions. \
+Use the page's Title from the candidate list as inspiration, but rewrite it into a \
+short, natural phrase (e.g., Title "Push Up Bras | Triumph" → title="Shop push-up bras for lift and comfort"). \
+Never copy the raw page title verbatim. Never leave title empty.
 7. **Descriptive anchor text**: Use 2-4 word phrases naturally present in the text. \
 Never rewrite sentences to create anchors.
 8. **Anchor text variety**: Mix exact keywords, partial matches, and natural phrases.
@@ -137,10 +140,11 @@ def build_plp_user_prompt(
         parts.append(f"**Related keywords**: {related_keywords}\n")
 
     parts.append("## Candidate target pages\n")
+    parts.append("Each page includes a Title — use it to craft the `title` attribute.\n")
     for i, page in enumerate(candidate_pages, 1):
         line = f"{i}. {page.url}"
         if page.title:
-            line += f"\n   Title: {page.title}"
+            line += f"\n   Page Title: {page.title}"
         if page.meta_description:
             line += f"\n   Description: {page.meta_description}"
         if page.impressions > 0:

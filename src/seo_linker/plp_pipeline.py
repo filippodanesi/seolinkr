@@ -62,14 +62,20 @@ def run_plp_pipeline(
 
     # Step 1: Parse XLSX
     log_fn(f"Parsing PLP XLSX: {input_path.name}...")
-    plp_rows = parse_plp_xlsx(
-        input_path,
-        sheet_name=sheet_name,
-        url_col=url_col,
-        content_col=content_col,
-        keyword_col=keyword_col,
-        related_kw_col=related_kw_col,
-    )
+    try:
+        plp_rows = parse_plp_xlsx(
+            input_path,
+            sheet_name=sheet_name,
+            url_col=url_col,
+            content_col=content_col,
+            keyword_col=keyword_col,
+            related_kw_col=related_kw_col,
+        )
+    except Exception as e:
+        import traceback
+        log_fn(f"  PARSE ERROR: {e}")
+        log_fn(traceback.format_exc())
+        raise
     log_fn(f"  Found {len(plp_rows)} PLP rows with content")
 
     if not plp_rows:
@@ -172,7 +178,9 @@ def run_plp_pipeline(
             log_fn(f"    Inserted {len(insertions)} links")
 
         except Exception as e:
+            import traceback
             log_fn(f"    ERROR: {e}")
+            log_fn(f"    {traceback.format_exc()}")
             row_results.append(PLPLinkingResult(
                 row_index=plp_row.row_index,
                 url=plp_row.url,

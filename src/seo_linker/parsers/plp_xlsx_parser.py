@@ -21,6 +21,13 @@ _KEYWORD_HEADERS = {"target keyword", "main keyword", "keyword", "focus keyword"
 _RELATED_KW_HEADERS = {"related keywords", "secondary keywords", "lsi keywords"}
 
 
+def _safe_get(row: tuple, idx: int):
+    """Safely get a value from a row tuple (openpyxl read_only rows can vary in length)."""
+    if idx < len(row):
+        return row[idx]
+    return None
+
+
 def parse_plp_xlsx(
     file_path: Path,
     sheet_name: str | None = None,
@@ -53,8 +60,9 @@ def parse_plp_xlsx(
     if not rows:
         return []
 
-    # Build header index
-    header = [str(c).strip().lower() if c else "" for c in rows[0]]
+    # Build header index — pad short rows with empty strings
+    header_raw = rows[0]
+    header = [str(c).strip().lower() if c else "" for c in header_raw]
 
     # Auto-detect or resolve column indices
     url_idx = _resolve_col(header, url_col, _URL_HEADERS)
@@ -73,15 +81,13 @@ def parse_plp_xlsx(
             "Use --content-col to specify explicitly."
         )
 
-    content_header_name = str(rows[0][content_idx]).strip() if rows[0][content_idx] else ""
+    content_header_val = _safe_get(header_raw, content_idx)
+    content_header_name = str(content_header_val).strip() if content_header_val else ""
 
     plp_rows: list[PLPRow] = []
     for row_idx, row in enumerate(rows[1:], start=2):  # Excel row 2+
-        if content_idx >= len(row) or url_idx >= len(row):
-            continue
-
-        url_val = row[url_idx]
-        content_val = row[content_idx]
+        url_val = _safe_get(row, url_idx)
+        content_val = _safe_get(row, content_idx)
 
         if not url_val or not content_val:
             continue
@@ -92,13 +98,11 @@ def parse_plp_xlsx(
         if not url_str or not content_str:
             continue
 
-        kw_str = ""
-        if kw_idx is not None and kw_idx < len(row) and row[kw_idx]:
-            kw_str = str(row[kw_idx]).strip()
+        kw_val = _safe_get(row, kw_idx) if kw_idx is not None else None
+        kw_str = str(kw_val).strip() if kw_val else ""
 
-        related_str = ""
-        if related_idx is not None and related_idx < len(row) and row[related_idx]:
-            related_str = str(row[related_idx]).strip()
+        related_val = _safe_get(row, related_idx) if related_idx is not None else None
+        related_str = str(related_val).strip() if related_val else ""
 
         plp_rows.append(PLPRow(
             row_index=row_idx,

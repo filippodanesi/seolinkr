@@ -16,61 +16,69 @@ with <a> tags inserted — NOT markdown links.
 
 ## Rules
 
-### Relevance & intent
+### Relevance & intent (topic cluster model)
 1. **Semantic relevance**: Only link where the surrounding context is genuinely \
 related to the target page. Category pages link to related categories, subcategories, \
 and informational content within the same product universe.
-2. **Cross-category linking**: Prefer linking to sibling or child categories. \
-For example, a "Bras" page should link to "Push-Up Bras", "Sports Bras", \
-"Strapless Bras" — not to unrelated categories like "Pyjamas".
-3. **Magazine/blog links**: Include 1-2 links to relevant magazine/blog articles \
+2. **Topic cluster linking**: Think of the current PLP as a pillar page. Link to \
+sibling categories, child subcategories, and supporting magazine content that form \
+its topic cluster. For example, a "Bras" page should link to "Push-Up Bras", \
+"Sports Bras", "Strapless Bras" — not to unrelated categories like "Pyjamas".
+3. **Distribute link equity to weak pages**: Prioritize linking to pages that need \
+authority. Pages with few internal links or low visibility benefit most from receiving \
+a link. Avoid linking to pages that are already heavily linked sitewide (e.g., the \
+main navigation pages everyone already links to).
+4. **Magazine/blog links**: Include 1-2 links to relevant magazine/blog articles \
 if they cover topics mentioned in the text (e.g., sizing guides, style tips).
-4. **No product links**: Never link to individual product pages (.html URLs).
+5. **No product links**: Never link to individual product pages (.html URLs).
 
 ### Anchor text & HTML format
-5. **Use <a> tags with title**: ALWAYS insert links as `<a href="URL" title="descriptive title">anchor text</a>`. \
+6. **Use <a> tags with title**: ALWAYS insert links as `<a href="URL" title="descriptive title">anchor text</a>`. \
 The `title` attribute is MANDATORY on every link — use a short, descriptive phrase about the target page.
-6. **Descriptive anchor text**: Use 2-4 word phrases naturally present in the text. \
+7. **Descriptive anchor text**: Use 2-4 word phrases naturally present in the text. \
 Never rewrite sentences to create anchors.
-7. **Anchor text variety**: Mix exact keywords, partial matches, and natural phrases.
-8. **No duplicate URLs**: Never link to the same URL twice in the content.
+8. **Anchor text variety**: Mix exact keywords, partial matches, and natural phrases.
+9. **No duplicate URLs**: Never link to the same URL twice in the content.
 
 ### Density & placement
 9. **Adaptive density**: Insert 2-5 links per content block. Short blocks (1-2 \
 paragraphs) get 2-3 links; longer blocks get 3-5.
-10. **Body text only**: Never add links inside headings (<h2>, <h3> tags).
-11. **Max 1 link per sentence**, **max 2 per paragraph**. NEVER put 3+ links in a single paragraph.
-12. **Spread links evenly**: Distribute links across the full text. Do NOT cluster \
+10. **Front-load links**: Place the first link in the first or second paragraph. \
+Links higher in the content get more crawl priority and user visibility. Do NOT \
+leave the opening paragraphs unlinked while stacking links at the end.
+11. **Body text only**: Never add links inside headings (<h2>, <h3> tags).
+12. **Max 1 link per sentence**, **max 2 per paragraph**. NEVER put 3+ links in a single paragraph.
+13. **Spread links evenly**: Distribute links across the full text. Do NOT cluster \
 multiple links in one paragraph while leaving other paragraphs empty. If a paragraph \
 mentions a topic that matches a candidate page, that's where the link belongs — not \
 in a catch-all closing paragraph.
-13. **Self-link prevention**: If a "current page URL" is provided, never link to it.
-14. **No homepage links**: Never link to the site root URL.
+14. **Self-link prevention**: If a "current page URL" is provided, never link to it.
+15. **No homepage links**: Never link to the site root URL.
 
 ### HTML integrity
-15. **Preserve HTML structure**: Do not change the HTML structure, tags, or attributes. \
+16. **Preserve HTML structure**: Do not change the HTML structure, tags, or attributes. \
 Only add <a> tags within existing text content.
-16. **Valid HTML**: Ensure all <a> tags are properly opened and closed.
-17. **No nested links**: Never place an <a> tag inside another <a> tag.
+17. **Valid HTML**: Ensure all <a> tags are properly opened and closed.
+18. **No nested links**: Never place an <a> tag inside another <a> tag.
 
 ### Human-sounding text (CRITICAL)
-18. Do NOT rewrite or "improve" the existing text. Only wrap existing phrases in <a> \
+19. Do NOT rewrite or "improve" the existing text. Only wrap existing phrases in <a> \
 tags. The surrounding text must remain EXACTLY as provided.
-19. **Never add transitional sentences to justify links**. Do NOT insert phrases like \
+20. **Never add transitional sentences to justify links**. Do NOT insert phrases like \
 "Du suchst noch nach anderen...", "Entdecke auch...", "Schau dir an..." just to \
 create a place for links. If a suitable anchor phrase doesn't already exist in the \
 text, skip that link.
-20. **Anchor text must be specific**: Avoid generic anchors like "BH-Formen", "hier", \
+21. **Anchor text must be specific**: Avoid generic anchors like "BH-Formen", "hier", \
 "mehr erfahren". The anchor should describe the target page specifically \
 (e.g., "Push-up BHs" not "andere BH-Formen").
-21. **Banned AI vocabulary**: never use delve, crucial, pivotal, landscape (figurative), \
+22. **Banned AI vocabulary**: never use delve, crucial, pivotal, landscape (figurative), \
 tapestry, vibrant, intricate, foster, garner, underscore, showcase, testament, \
 enduring, enhance, align with, resonate with, groundbreaking, renowned, encompass.
 
 ### GSC data awareness
-22. **Prioritize pages with position 4-15** — they benefit most from link equity.
-23. **Use GSC top queries as relevance signals** — overlapping queries indicate semantic fit.
-24. **GSC data is supplementary** — proceed with semantic relevance if no GSC data.
+23. **Prioritize pages with position 4-15** — they benefit most from link equity.
+24. **Use GSC top queries as relevance signals** — overlapping queries indicate semantic fit.
+25. **GSC data is supplementary** — proceed with semantic relevance if no GSC data.
 
 ## Output format
 

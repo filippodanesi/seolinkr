@@ -43,6 +43,9 @@ def link_plp_html(
     response = _call_claude(api_key, model, user_prompt, system_prompt)
     linked_html, insertions = _parse_html_response(response)
 
+    # Ensure every <a> has a title attribute — fallback to candidate page title
+    linked_html = _ensure_title_attrs(linked_html, candidate_pages)
+
     return linked_html, insertions
 
 
@@ -99,3 +102,42 @@ def _parse_html_response(response: str) -> tuple[str, list[LinkInsertion]]:
     verified = [ins for ins in insertions if ins.target_url in actual_links]
 
     return linked_html, verified
+
+
+def _ensure_title_attrs(html: str, candidate_pages: list[TargetPage]) -> str:
+    """Add missing title attributes to <a> tags using candidate page titles."""
+    from urllib.parse import urlparse
+
+    # Build URL → title lookup (both full URL and path-only)
+    title_map: dict[str, str] = {}
+    for page in candidate_pages:
+        if page.title:
+            title_map[page.url] = page.title
+            parsed = urlparse(page.url)
+            if parsed.path:
+                title_map[parsed.path] = page.title
+
+    def _add_title(match: re.Match) -> str:
+        tag = match.group(0)
+        # Already has title — skip
+        if re.search(r'\btitle\s*=', tag):
+            return tag
+        # Extract href
+        href_match = re.search(r'href=["\']([^"\']+)["\']', tag)
+        if not href_match:
+            return tag
+        href = href_match.group(1)
+        # Look up title from candidates
+        title = title_map.get(href)
+        if not title:
+            # Try path only
+            parsed = urlparse(href)
+            title = title_map.get(parsed.path)
+        if not title:
+            return tag
+        # Escape quotes in title
+        safe_title = title.replace('"', '&quot;')
+        # Insert title after href
+        return tag[:href_match.end() + 1] + f' title="{safe_title}"' + tag[href_match.end() + 1:]
+
+    return re.sub(r'<a\s[^>]*>', _add_title, html)

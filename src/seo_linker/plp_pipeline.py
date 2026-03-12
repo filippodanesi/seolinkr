@@ -193,7 +193,7 @@ def run_plp_pipeline(
     if output_path is None:
         output_path = input_path.with_name(f"{input_path.stem}_linked{input_path.suffix}")
 
-    _write_plp_results(input_path, output_path, plp_rows, row_results, content_col)
+    _write_plp_results(input_path, output_path, plp_rows, row_results, content_col, sheet_name)
     log_fn(f"\nOutput: {output_path}")
     log_fn(f"Summary: {succeeded}/{len(plp_rows)} succeeded, {total_links} links inserted")
 
@@ -221,12 +221,18 @@ def _write_plp_results(
     plp_rows: list[PLPRow],
     row_results: list[PLPLinkingResult],
     content_col: str | None,
+    sheet_name: str | None = None,
 ) -> None:
-    """Write linked HTML back to the XLSX, adding a 'Linked Content' column."""
+    """Write linked HTML directly into the content column, overwriting the original."""
     wb = load_workbook(str(input_path))
-    ws = wb.active
 
-    # Find the content column index
+    # Use the specified sheet, or fall back to active
+    if sheet_name and sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+    else:
+        ws = wb.active
+
+    # Find the content column index (1-based for openpyxl)
     header_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
     header_lower = [str(c).strip().lower() if c else "" for c in header_row]
 
@@ -234,7 +240,6 @@ def _write_plp_results(
         from seo_linker.parsers.plp_xlsx_parser import _col_letter_to_index
         content_idx = _col_letter_to_index(content_col.upper())
     else:
-        # Find by matching the column name from the first PLPRow
         content_idx = None
         if plp_rows and plp_rows[0].column_name:
             target = plp_rows[0].column_name.lower()
@@ -243,16 +248,18 @@ def _write_plp_results(
                     content_idx = i
                     break
         if content_idx is None:
-            # Fallback: search known headers
             from seo_linker.parsers.plp_xlsx_parser import _CONTENT_HEADERS
             for i, h in enumerate(header_lower):
                 if h in _CONTENT_HEADERS:
                     content_idx = i
                     break
 
-    # Add "Linked Content" column
-    linked_col = len(header_row) + 1
-    ws.cell(row=1, column=linked_col, value="Linked Content")
+    if content_idx is None:
+        wb.close()
+        return
+
+    # openpyxl columns are 1-based
+    col_1based = content_idx + 1
 
     # Build result lookup by row index
     result_map = {r.row_index: r for r in row_results}
@@ -260,10 +267,8 @@ def _write_plp_results(
     for plp_row in plp_rows:
         result = result_map.get(plp_row.row_index)
         if result and result.linked_html != result.original_html:
-            ws.cell(row=plp_row.row_index, column=linked_col, value=result.linked_html)
-        else:
-            # No changes — copy original
-            ws.cell(row=plp_row.row_index, column=linked_col, value=plp_row.content_html)
+            # Overwrite content column directly with linked HTML
+            ws.cell(row=plp_row.row_index, column=col_1based, value=result.linked_html)
 
     wb.save(str(output_path))
     wb.close()

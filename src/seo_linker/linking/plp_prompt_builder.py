@@ -28,7 +28,8 @@ if they cover topics mentioned in the text (e.g., sizing guides, style tips).
 4. **No product links**: Never link to individual product pages (.html URLs).
 
 ### Anchor text & HTML format
-5. **Use <a> tags**: Insert links as `<a href="URL" title="description">anchor text</a>`.
+5. **Use <a> tags with title**: ALWAYS insert links as `<a href="URL" title="descriptive title">anchor text</a>`. \
+The `title` attribute is MANDATORY on every link — use a short, descriptive phrase about the target page.
 6. **Descriptive anchor text**: Use 2-4 word phrases naturally present in the text. \
 Never rewrite sentences to create anchors.
 7. **Anchor text variety**: Mix exact keywords, partial matches, and natural phrases.

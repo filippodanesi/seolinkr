@@ -12,8 +12,9 @@ import { FileUploader } from "@/components/file-uploader";
 import { GscSiteSelector } from "@/components/gsc-site-selector";
 import { PipelineProgress } from "@/components/pipeline-progress";
 import { SitemapSelector } from "@/components/sitemap-selector";
-import { runPLPPipeline } from "@/lib/api";
+import { getXlsxSheets, runPLPPipeline } from "@/lib/api";
 import type { PLPBatchResult, PLPSSEEvent } from "@/lib/types";
+import type { XlsxSheetInfo } from "@/lib/api";
 
 export default function ProcessPLPsPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -21,6 +22,11 @@ export default function ProcessPLPsPage() {
   const [maxLinks, setMaxLinks] = useState(5);
   const [topN, setTopN] = useState(25);
   const [gscSite, setGscSite] = useState("");
+
+  // Sheet & column selection
+  const [sheets, setSheets] = useState<XlsxSheetInfo[]>([]);
+  const [selectedSheet, setSelectedSheet] = useState("");
+  const [loadingSheets, setLoadingSheets] = useState(false);
   const [urlCol, setUrlCol] = useState("");
   const [contentCol, setContentCol] = useState("");
   const [keywordCol, setKeywordCol] = useState("");
@@ -29,6 +35,31 @@ export default function ProcessPLPsPage() {
   const [result, setResult] = useState<PLPBatchResult | null>(null);
   const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  async function handleFileSelect(f: File) {
+    setFile(f);
+    setSheets([]);
+    setSelectedSheet("");
+
+    if (!f.name.endsWith(".xlsx")) return;
+
+    setLoadingSheets(true);
+    try {
+      const sheetList = await getXlsxSheets(f);
+      setSheets(sheetList);
+      // Auto-select the active sheet
+      const active = sheetList.find((s) => s.is_active);
+      if (active) setSelectedSheet(active.name);
+    } catch (e) {
+      toast.error("Could not read sheet names: " + String(e));
+    } finally {
+      setLoadingSheets(false);
+    }
+  }
+
+  // Get headers for selected sheet
+  const currentSheet = sheets.find((s) => s.name === selectedSheet);
+  const headers = currentSheet?.headers ?? [];
 
   async function handleProcess() {
     if (!file || !sitemap) return;
@@ -47,6 +78,7 @@ export default function ProcessPLPsPage() {
           maxLinks,
           topN,
           gscSite: gscSite || undefined,
+          sheetName: selectedSheet || undefined,
           urlCol: urlCol || undefined,
           contentCol: contentCol || undefined,
           keywordCol: keywordCol || undefined,
@@ -103,7 +135,49 @@ export default function ProcessPLPsPage() {
             </p>
           </div>
 
-          <FileUploader onFile={setFile} accept=".xlsx" />
+          <FileUploader onFile={handleFileSelect} accept=".xlsx" />
+
+          {/* Sheet selector */}
+          {sheets.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Sheet</Label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedSheet}
+                onChange={(e) => setSelectedSheet(e.target.value)}
+              >
+                {sheets.map((s) => (
+                  <option key={s.name} value={s.name}>
+                    {s.name} ({s.row_count} rows, {s.headers.length} cols)
+                    {s.is_active ? " *" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {loadingSheets && (
+            <p className="text-xs text-muted-foreground">Reading sheets...</p>
+          )}
+
+          {/* Column headers preview */}
+          {headers.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">
+                Columns in &quot;{selectedSheet}&quot;
+              </Label>
+              <div className="flex flex-wrap gap-1">
+                {headers.map((h, i) => (
+                  <span
+                    key={i}
+                    className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono"
+                    title={`Column ${String.fromCharCode(65 + i)}`}
+                  >
+                    {String.fromCharCode(65 + i)}: {h || "(empty)"}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <SitemapSelector value={sitemap} onChange={setSitemap} />
@@ -157,7 +231,10 @@ export default function ProcessPLPsPage() {
               {running ? "Processing..." : "Process PLPs"}
             </Button>
             {running && (
-              <Button variant="destructive" onClick={() => abortRef.current?.abort()}>
+              <Button
+                variant="destructive"
+                onClick={() => abortRef.current?.abort()}
+              >
                 <OctagonX className="mr-2 h-4 w-4" />
                 Cancel
               </Button>

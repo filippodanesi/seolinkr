@@ -71,7 +71,7 @@ _check_config()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import audit, batch, candidates, config, gsc, link_map, pipeline, plp, sitemap
+from api.routes import audit, batch, candidates, config, gsc, link_map, pipeline, plp, sitemap, xlsx_utils
 
 app = FastAPI(
     title="SEO Internal Linker API",
@@ -102,6 +102,7 @@ app.include_router(pipeline.router, prefix="/api")
 app.include_router(plp.router, prefix="/api")
 app.include_router(link_map.router, prefix="/api")
 app.include_router(sitemap.router, prefix="/api")
+app.include_router(xlsx_utils.router, prefix="/api")
 
 
 @app.get("/api/health")

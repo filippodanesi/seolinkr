@@ -412,6 +412,24 @@ export async function runLinkMap(
   onDone();
 }
 
+/* ── XLSX Utils ──────────────────────────────────────────────── */
+
+export interface XlsxSheetInfo {
+  name: string;
+  headers: string[];
+  row_count: number;
+  is_active: boolean;
+}
+
+export async function getXlsxSheets(file: File): Promise<XlsxSheetInfo[]> {
+  const form = new FormData();
+  form.append("file", file);
+  return fetchJSON<XlsxSheetInfo[]>("/xlsx-sheets", {
+    method: "POST",
+    body: form,
+  });
+}
+
 /* ── Config ──────────────────────────────────────────────────── */
 
 export async function getConfig(): Promise<AppConfig> {

@@ -66,6 +66,7 @@ def prefilter_pages(
     pages: list[TargetPage],
     top_n: int = 25,
     model_name: str = "intfloat/multilingual-e5-small",
+    cached_passage_embs: np.ndarray | None = None,
 ) -> list[TargetPage]:
     """Return the top-N most relevant pages using multi-signal scoring.
 
@@ -74,6 +75,9 @@ def prefilter_pages(
     2. URL taxonomy overlap  (weight: 0.20 / 0.25 without GSC)
     3. GSC opportunity boost  (weight: 0.20 / 0.00 without GSC)
     4. Heading topic overlap  (weight: 0.10 / 0.15 without GSC)
+
+    Pass ``cached_passage_embs`` to reuse pre-computed passage embeddings
+    (e.g. in batch pipelines where the candidate pages don't change).
     """
     # Filter out homepages (root URLs with no meaningful path)
     pages = [p for p in pages if urlparse(p.url).path.strip("/")]
@@ -86,7 +90,6 @@ def prefilter_pages(
 
     # --- Signal 1: Embedding similarity (primary) ---
     content_text = " ".join(s.text for s in sections)
-    page_texts = [p.embedding_text for p in pages]
 
     is_e5 = "e5" in model_name.lower()
     query_prefix = "query: " if is_e5 else ""
@@ -97,12 +100,17 @@ def prefilter_pages(
     query_emb = encode_texts([query_prefix + content_text], model_name)[0]
     logger.info("Query embedding done in %.1fs", time.time() - t0)
 
-    logger.info("Encoding %d passage embeddings...", len(page_texts))
-    t0 = time.time()
-    passage_embs = encode_texts(
-        [passage_prefix + t for t in page_texts], model_name
-    )
-    logger.info("Passage embeddings done in %.1fs", time.time() - t0)
+    if cached_passage_embs is not None:
+        logger.info("Using cached passage embeddings (%d pages)", len(pages))
+        passage_embs = cached_passage_embs
+    else:
+        page_texts = [p.embedding_text for p in pages]
+        logger.info("Encoding %d passage embeddings...", len(page_texts))
+        t0 = time.time()
+        passage_embs = encode_texts(
+            [passage_prefix + t for t in page_texts], model_name
+        )
+        logger.info("Passage embeddings done in %.1fs", time.time() - t0)
     emb_scores = _cosine_similarity(query_emb, passage_embs)
 
     # Normalize to 0-1
@@ -144,6 +152,29 @@ def prefilter_pages(
 
     top_indices = np.argsort(final)[::-1][:top_n]
     return [pages[i] for i in top_indices]
+
+
+def precompute_passage_embeddings(
+    pages: list[TargetPage],
+    model_name: str = "intfloat/multilingual-e5-small",
+) -> np.ndarray:
+    """Pre-compute passage embeddings for a set of pages.
+
+    Call this once, then pass the result as ``cached_passage_embs`` to
+    ``prefilter_pages`` for each query to avoid redundant HF API calls.
+    """
+    is_e5 = "e5" in model_name.lower()
+    passage_prefix = "passage: " if is_e5 else ""
+
+    # Filter same as prefilter_pages does
+    filtered = [p for p in pages if urlparse(p.url).path.strip("/")]
+    page_texts = [p.embedding_text for p in filtered]
+
+    logger.info("Pre-computing %d passage embeddings (one-time)...", len(page_texts))
+    t0 = time.time()
+    embs = encode_texts([passage_prefix + t for t in page_texts], model_name)
+    logger.info("Passage embeddings pre-computed in %.1fs", time.time() - t0)
+    return embs
 
 
 # ---------------------------------------------------------------------------

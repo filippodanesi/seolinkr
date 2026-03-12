@@ -10,7 +10,7 @@ from openpyxl import load_workbook
 
 from seo_linker.config import Config
 from seo_linker.linking.plp_linker import link_plp_html
-from seo_linker.matching.prefilter import prefilter_pages
+from seo_linker.matching.prefilter import precompute_passage_embeddings, prefilter_pages
 from seo_linker.models import (
     ContentSection,
     PLPBatchResult,
@@ -116,7 +116,12 @@ def run_plp_pipeline(
         pages = gsc_client.enrich_candidates(pages, gsc_site)
         log_fn(f"  GSC: {sum(1 for p in pages if p.impressions > 0)}/{len(pages)} with metrics")
 
-    # Step 3: Process each PLP row
+    # Step 3: Pre-compute passage embeddings ONCE for all rows
+    log_fn("Pre-computing passage embeddings (one-time)...")
+    cached_embs = precompute_passage_embeddings(pages, config.embedding_model)
+    log_fn(f"  Cached {cached_embs.shape[0]} passage embeddings")
+
+    # Step 4: Process each PLP row
     log_fn(f"\nProcessing {len(plp_rows)} PLPs...")
     row_results: list[PLPLinkingResult] = []
     succeeded = 0
@@ -134,9 +139,10 @@ def run_plp_pipeline(
                 heading=plp_row.target_keyword or plp_row.url,
             )
 
-            # Prefilter candidates for this specific PLP
+            # Prefilter candidates (reuses cached passage embeddings)
             candidates = prefilter_pages(
                 [section], pages, top_n, config.embedding_model,
+                cached_passage_embs=cached_embs,
             )
 
             # Remove self-link

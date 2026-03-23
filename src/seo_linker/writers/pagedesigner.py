@@ -131,80 +131,66 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
         else:
             classified.append(("text", block))
 
-    # Find boundary: structured part (intro + H3s + their content) vs trailing
-    last_structured = -1
-    after_h3 = False
-    for i, (typ, _) in enumerate(classified):
+    # Group items: intro (before first H3) + H3 sections (each H3 with its content)
+    groups: list[tuple[str, list[tuple[str, str]]]] = []
+    current: list[tuple[str, str]] = []
+    current_type = "intro"
+
+    for typ, content in classified:
         if typ == "h3":
-            last_structured = i
-            after_h3 = True
-        elif typ == "table":
-            last_structured = i
-            after_h3 = False
-        elif after_h3:
-            # First text block after an H3 belongs to structured part
-            last_structured = i
-            after_h3 = False
+            if current:
+                groups.append((current_type, current))
+            current = [(typ, content)]
+            current_type = "h3"
+        else:
+            current.append((typ, content))
 
-    if last_structured >= 0:
-        structured = classified[: last_structured + 1]
-        trailing = classified[last_structured + 1 :]
-    else:
-        structured = []
-        trailing = classified
+    if current:
+        groups.append((current_type, current))
 
+    # Convert groups to BODY components
     components: list[tuple[str, str]] = []
 
-    # Build structured HTML component
-    if structured:
-        html_parts: list[str] = []
-        first_h3_seen = False
-        has_table = False
-
-        for typ, content in structured:
-            if typ in ("text", "h1", "list") and not first_h3_seen:
-                # Intro content — no <p> wrapping
-                html_parts.append(_block_to_html(content, sizes))
-            elif typ == "h3":
-                if not first_h3_seen:
-                    html_parts.append("<br>")
-                    first_h3_seen = True
-                html_parts.append(
-                    f'<h3 style="font-weight:400; font-size:{sizes["h3"]}; '
-                    f'line-height:40px; font-family: {_FF};">'
-                    f"{_inline(content)}</h3>"
-                )
-            elif typ in ("text", "list"):
-                html_parts.append(f"<p>{_block_to_html(content, sizes)}</p>")
-            elif typ == "h1":
-                html_parts.append(_block_to_html(content, sizes))
-            elif typ == "table":
-                has_table = True
-                html_parts.append(
-                    _table_to_html(content, sizes["table_width"])
-                )
-                html_parts.append("<br>")
-
-        if has_table:
-            label = "BODY - Rich text with table and H3 tags"
-        elif first_h3_seen:
-            label = "BODY - Rich text with p and H3 tags"
+    for group_type, items in groups:
+        if group_type == "intro":
+            # Each intro item gets its own BODY block
+            for typ, content in items:
+                if typ == "table":
+                    components.append(
+                        ("BODY", _table_to_html(content, sizes["table_width"]))
+                    )
+                elif typ == "h1":
+                    components.append(("H1", _block_to_html(content, sizes)))
+                elif typ == "list":
+                    components.append(
+                        ("BODY - List", _block_to_html(content, sizes))
+                    )
+                else:
+                    components.append(("BODY", _block_to_html(content, sizes)))
         else:
-            label = "BODY"
-        components.append((label, "".join(html_parts)))
-
-    # Trailing components
-    for typ, content in trailing:
-        if typ == "table":
-            components.append(
-                ("BODY - Table", _table_to_html(content, sizes["table_width"]))
-            )
-        elif typ == "h1":
-            components.append(("H1", _block_to_html(content, sizes)))
-        elif typ == "list":
-            components.append(("BODY - List", _block_to_html(content, sizes)))
-        else:
-            components.append(("BODY", _block_to_html(content, sizes)))
+            # H3 section: heading + all following content in one BODY block
+            html_parts: list[str] = []
+            for typ, content in items:
+                if typ == "h3":
+                    html_parts.append(
+                        f'<h3 style="font-weight:400; font-size:{sizes["h3"]}; '
+                        f"line-height:40px; margin-top: 0; margin-bottom: 12px; "
+                        f'font-family: {_FF};">'
+                        f"{_inline(content)}</h3>"
+                    )
+                elif typ == "table":
+                    html_parts.append(
+                        _table_to_html(content, sizes["table_width"])
+                    )
+                elif typ == "list":
+                    html_parts.append(_block_to_html(content, sizes))
+                elif typ == "h1":
+                    html_parts.append(_block_to_html(content, sizes))
+                else:
+                    html_parts.append(
+                        f"<p>{_block_to_html(content, sizes)}</p>"
+                    )
+            components.append(("BODY", "".join(html_parts)))
 
     return components
 

@@ -155,7 +155,7 @@ def markdown_to_pagedesigner(
 def _make_h2(sec: dict, section_num: int, sizes: dict) -> str:
     """Build an H2 tag with margin-top."""
     return (
-        f'<h2 id="{sec["slug"]}" style="font-weight:400; '
+        f'<h2 id="{sec["slug"]}" style="font-weight:400; color: #000; '
         f'font-size:{sizes["h2"]}; margin-top: {sizes["h2_mt"]}; '
         f'font-family: {_FF};">'
         f"{_inline(sec['heading'])}</h2>"
@@ -270,7 +270,7 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
             for typ, content in items:
                 if typ == "h3":
                     html_parts.append(
-                        f'<h3 style="font-weight:400; font-size:{sizes["h3"]}; '
+                        f'<h3 style="font-weight:400; color: #000; font-size:{sizes["h3"]}; '
                         f'line-height:40px; margin-top: {sizes["h3_mt"]}; margin-bottom: 12px; '
                         f'font-family: {_FF};">'
                         f"{_inline(content)}</h3>"
@@ -285,7 +285,7 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
                     html_parts.append(_block_to_html(content, sizes))
                 else:
                     html_parts.append(
-                        f"<p>{_block_to_html(content, sizes)}</p>"
+                        f'<p style="color: #000;">{_block_to_html(content, sizes)}</p>'
                     )
             components.append(("BODY", "".join(html_parts)))
 
@@ -315,7 +315,7 @@ def _convert_faq_accordion(body: str) -> str:
         parts.append(
             '<details style="margin-bottom: 8px; border-bottom: 1px solid #eee; '
             'padding-bottom: 8px;"><summary style="cursor: pointer; font-weight: '
-            'bold; font-size: 16px; padding: 8px 0;">'
+            'bold; font-size: 16px; padding: 8px 0; color: #000;">'
             f"{question}</summary><p style=\"margin: 8px 0 0 0; font-size: 15px; "
             f'color: #444;">{answer}</p></details>'
         )
@@ -336,8 +336,8 @@ def _inline(text: str) -> str:
         if title_match:
             url = title_match.group(1)
             title = title_match.group(2)
-            return f'<a href="{url}" title="{title}">{anchor}</a>'
-        return f'<a href="{raw}">{anchor}</a>'
+            return f'<a href="{url}" title="{title}" style="color: #000;">{anchor}</a>'
+        return f'<a href="{raw}" style="color: #000;">{anchor}</a>'
 
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link_replace, text)
     # Convert **bold** to <strong> (must come before *italic*)
@@ -364,7 +364,7 @@ def _block_to_html(block: str, sizes: dict) -> str:
     if h1_match:
         heading = h1_match.group(1).strip()
         return (
-            f'<h1 style="font-weight:400; font-family: {_FF};">'
+            f'<h1 style="font-weight:400; color: #000; font-family: {_FF};">'
             f"{_inline(heading)}</h1>"
         )
 
@@ -381,8 +381,8 @@ def _list_to_html(lines: list[str], ordered: bool = False) -> str:
             continue
         # Strip bullet/number prefix
         text = re.sub(r"^[-*]\s+", "", line) if not ordered else re.sub(r"^\d+\.\s+", "", line)
-        items.append(f"<li>{_inline(text.strip())}</li>")
-    return f"<{tag}>{''.join(items)}</{tag}>"
+        items.append(f'<li style="color: #000;">{_inline(text.strip())}</li>')
+    return f'<{tag} style="color: #000;">{"".join(items)}</{tag}>'
 
 
 # -- Table conversion --------------------------------------------------------
@@ -395,10 +395,10 @@ def _table_to_html(md_table: str, width: str) -> str:
         return _inline(md_table)
 
     th_style = (
-        "border: 1px solid #ccc; padding: 8px; "
+        "border: 1px solid #ccc; padding: 8px; color: #000; "
         "font-weight: bold; text-align: left;"
     )
-    td_style = "border: 1px solid #ccc; padding: 8px;"
+    td_style = "border: 1px solid #ccc; padding: 8px; color: #000;"
 
     # Header row
     header_cells = [c.strip() for c in lines[0].strip("|").split("|")]
@@ -432,9 +432,9 @@ def _build_toc(entries: list[tuple[str, str]], sizes: dict) -> str:
     items: list[str] = []
     for i, (text, slug) in enumerate(entries, 1):
         items.append(
-            f'<li style="display: flex; gap: 6px; justify-content:center;">'
+            f'<li style="display: flex; gap: 6px; justify-content:center; color: #000;">'
             f"<span>{i}.</span>"
-            f'<a style="text-decoration: none;" href="#{slug}">{text}</a>'
+            f'<a style="text-decoration: none; color: #000;" href="#{slug}">{text}</a>'
             f"</li>"
         )
     ol = (
@@ -445,7 +445,7 @@ def _build_toc(entries: list[tuple[str, str]], sizes: dict) -> str:
         + "</ol>"
     )
     h2 = (
-        f'<h2 id="toc" style="font-weight:400; font-size:{sizes["h2"]}; '
+        f'<h2 id="toc" style="font-weight:400; color: #000; font-size:{sizes["h2"]}; '
         f'margin-top: {sizes["h2_mt"]}; font-family: {_FF};">Table of Contents</h2>'
     )
     return h2 + ol

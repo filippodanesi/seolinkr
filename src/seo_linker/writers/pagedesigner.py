@@ -7,11 +7,14 @@ import re
 from typing import Literal
 
 _FF = "var(--highlightFont, var(--baseFont))"
+_HR = '<hr style="border: none; border-top: 1px solid black; margin: 16px 0;">'
 
 _SIZES = {
-    "desktop": {"h2": "32px", "h3": "24px", "table_width": "50%"},
-    "mobile": {"h2": "24px", "h3": "20px", "table_width": "100%"},
+    "desktop": {"h2": "32px", "h3": "24px", "h2_mt": "32px", "h3_mt": "32px", "table_width": "50%"},
+    "mobile": {"h2": "24px", "h3": "20px", "h2_mt": "20px", "h3_mt": "20px", "table_width": "100%"},
 }
+
+_KEY_TAKEAWAYS = {"Key Takeaways", "Die wichtigsten Erkenntnisse"}
 
 
 def markdown_to_pagedesigner(
@@ -19,6 +22,7 @@ def markdown_to_pagedesigner(
     variant: Literal["desktop", "mobile"],
     seo_title: str = "",
     seo_meta_description: str = "",
+    tldr_text: str = "",
 ) -> str:
     """Convert linked markdown to Page Designer richtext components (TXT)."""
     sizes = _SIZES[variant]
@@ -26,12 +30,87 @@ def markdown_to_pagedesigner(
     # Parse H2 sections
     sections = _parse_h2_sections(markdown.strip())
 
-    # Collect H2 headings for TOC
-    h2_entries = [(s["heading"], s["slug"]) for s in sections if s["heading"]]
+    # Filter out Key Takeaways, but preserve any trailing italic note (e.g. *Written by...*)
+    filtered = []
+    trailing_em = ""
+    for s in sections:
+        if s["heading"] in _KEY_TAKEAWAYS:
+            # Check if last paragraph in body is italic text (*...*)
+            if s["body"]:
+                paragraphs = [p.strip() for p in s["body"].split("\n\n") if p.strip()]
+                if paragraphs and re.match(r"^\*[^*]", paragraphs[-1]):
+                    trailing_em = paragraphs[-1]
+            continue
+        filtered.append(s)
+    # trailing_em is appended after all article sections (see below)
 
+    # Collect H2 headings for TOC (exclude Key Takeaways)
+    h2_entries = [(s["heading"], s["slug"]) for s in filtered if s["heading"]]
+
+    # --- Build section components, separating H1 from article body ---
+    h1_component = None
+    preamble_components: list[tuple[str, str]] = []
+    article_components: list[tuple[str, str]] = []
+
+    section_num = 0
+    for sec in filtered:
+        if not sec["heading"]:
+            # Preamble (contains H1)
+            if sec["body"]:
+                for label, html in _convert_body(sec["body"], sizes):
+                    if label == "H1":
+                        h1_component = ("H1", html)
+                    else:
+                        preamble_components.append((label, html))
+        elif sec["heading"].rstrip("s") == "FAQ":
+            # FAQ section → accordion
+            section_num += 1
+            h2_html = _make_h2(sec, section_num, sizes)
+            article_components.append(
+                (f"H2 - Section {section_num}: {sec['heading']}", h2_html)
+            )
+            if sec["body"]:
+                article_components.append(
+                    ("BODY", _convert_faq_accordion(sec["body"]))
+                )
+        else:
+            # Normal H2 section
+            section_num += 1
+            h2_html = _make_h2(sec, section_num, sizes)
+            article_components.append(
+                (f"H2 - Section {section_num}: {sec['heading']}", h2_html)
+            )
+            if sec["body"]:
+                article_components.extend(_convert_body(sec["body"], sizes))
+
+    # --- Append trailing <em> note extracted from Key Takeaways ---
+    if trailing_em:
+        em_html = _inline(trailing_em)
+        article_components.append(("BODY", em_html))
+
+    # --- Restyle final <em> ---
+    for i in range(len(article_components) - 1, -1, -1):
+        label, html = article_components[i]
+        if "<em>" in html or "<em " in html:
+            html = re.sub(
+                r"<em(?:\s[^>]*)?>",
+                '<em style="font-size: 14px; color: #666;">',
+                html,
+            )
+            article_components[i] = (label, html)
+            break
+
+    # --- Insert <hr> before final <em> block ---
+    for i in range(len(article_components) - 1, -1, -1):
+        _, html = article_components[i]
+        if '<em style="font-size: 14px; color: #666;">' in html:
+            article_components.insert(i, ("_HR", _HR))
+            break
+
+    # --- Assemble final ordered components ---
     components: list[tuple[str, str]] = []
 
-    # Metadata
+    # 1. METADATA
     if seo_title or seo_meta_description:
         meta_lines = []
         if seo_title:
@@ -40,29 +119,47 @@ def markdown_to_pagedesigner(
             meta_lines.append(f"Meta Description: {seo_meta_description}")
         components.append(("METADATA", "\n".join(meta_lines)))
 
-    # TOC
+    # 2. H1
+    if h1_component:
+        components.append(h1_component)
+
+    # 3. TL;DR
+    if tldr_text:
+        components.append((
+            "BODY",
+            f'<p style="font-size: 14px; color: #666; line-height: 1.6;">'
+            f"<strong>TL;DR:</strong> {tldr_text}</p>",
+        ))
+
+    # 4. <hr> after TL;DR / before TOC
+    if tldr_text or len(h2_entries) > 1:
+        components.append(("_HR", _HR))
+
+    # 5. TOC
     if len(h2_entries) > 1:
         components.append(("TABLE OF CONTENTS", _build_toc(h2_entries, sizes)))
 
-    # Process each section
-    section_num = 0
-    for sec in sections:
-        if sec["heading"]:
-            section_num += 1
-            h2_html = (
-                f'<h2 id="{sec["slug"]}" style="font-weight:400; '
-                f'font-size:{sizes["h2"]}; font-family: {_FF};">'
-                f"{_inline(sec['heading'])}</h2>"
-            )
-            components.append(
-                (f"H2 - Section {section_num}: {sec['heading']}", h2_html)
-            )
+    # 6. <hr> after TOC
+    if len(h2_entries) > 1:
+        components.append(("_HR", _HR))
 
-        if sec["body"]:
-            body_parts = _convert_body(sec["body"], sizes)
-            components.extend(body_parts)
+    # 7. Preamble body (non-H1 blocks from intro)
+    components.extend(preamble_components)
+
+    # 8. Article body sections (includes <hr> before final <em>)
+    components.extend(article_components)
 
     return _format_output(components)
+
+
+def _make_h2(sec: dict, section_num: int, sizes: dict) -> str:
+    """Build an H2 tag with margin-top."""
+    return (
+        f'<h2 id="{sec["slug"]}" style="font-weight:400; '
+        f'font-size:{sizes["h2"]}; margin-top: {sizes["h2_mt"]}; '
+        f'font-family: {_FF};">'
+        f"{_inline(sec['heading'])}</h2>"
+    )
 
 
 # -- Parsing -----------------------------------------------------------------
@@ -174,7 +271,7 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
                 if typ == "h3":
                     html_parts.append(
                         f'<h3 style="font-weight:400; font-size:{sizes["h3"]}; '
-                        f"line-height:40px; margin-top: 0; margin-bottom: 12px; "
+                        f'line-height:40px; margin-top: {sizes["h3_mt"]}; margin-bottom: 12px; '
                         f'font-family: {_FF};">'
                         f"{_inline(content)}</h3>"
                     )
@@ -193,6 +290,36 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
             components.append(("BODY", "".join(html_parts)))
 
     return components
+
+
+# -- FAQ accordion -----------------------------------------------------------
+
+
+def _convert_faq_accordion(body: str) -> str:
+    """Convert FAQ section body markdown into <details>/<summary> accordion HTML."""
+    blocks = [b.strip() for b in body.split("\n\n") if b.strip()]
+    parts: list[str] = []
+    for block in blocks:
+        lines = block.split("\n", 1)
+        # Question line: **Q: question** or **question**
+        q_match = re.match(r"\*\*(?:[QF]:\s*)?(.+?)\*\*", lines[0])
+        if not q_match:
+            continue
+        question = _inline(q_match.group(1).strip())
+        # Answer: rest of first line after ** + subsequent lines
+        answer_start = lines[0][q_match.end():].strip()
+        answer_rest = lines[1].strip() if len(lines) > 1 else ""
+        answer = (answer_start + " " + answer_rest).strip() if answer_start else answer_rest
+        answer = re.sub(r"^[A]:\s*", "", answer)
+        answer = _inline(answer)
+        parts.append(
+            '<details style="margin-bottom: 8px; border-bottom: 1px solid #eee; '
+            'padding-bottom: 8px;"><summary style="cursor: pointer; font-weight: '
+            'bold; font-size: 16px; padding: 8px 0;">'
+            f"{question}</summary><p style=\"margin: 8px 0 0 0; font-size: 15px; "
+            f'color: #444;">{answer}</p></details>'
+        )
+    return "\n".join(parts)
 
 
 # -- Inline text processing --------------------------------------------------
@@ -319,7 +446,7 @@ def _build_toc(entries: list[tuple[str, str]], sizes: dict) -> str:
     )
     h2 = (
         f'<h2 id="toc" style="font-weight:400; font-size:{sizes["h2"]}; '
-        f'font-family: {_FF};">Table of Contents</h2>'
+        f'margin-top: {sizes["h2_mt"]}; font-family: {_FF};">Table of Contents</h2>'
     )
     return h2 + ol
 
@@ -331,7 +458,9 @@ def _format_output(components: list[tuple[str, str]]) -> str:
     """Format components into the final TXT output with HTML comment separators."""
     parts: list[str] = []
     for label, html in components:
-        parts.append(f"<!-- {label} -->")
-        parts.append(html)
-        parts.append("")
+        if label == "_HR":
+            parts.append(html)
+        else:
+            parts.append(f"<!-- {label} -->")
+            parts.append(html)
     return "\n".join(parts)

@@ -263,7 +263,13 @@ def _convert_body(body: str, sizes: dict) -> list[tuple[str, str]]:
                         ("BODY - List", _block_to_html(content, sizes))
                     )
                 else:
-                    components.append(("BODY", _block_to_html(content, sizes)))
+                    html = _block_to_html(content, sizes)
+                    # Wrap plain inline text in <p> with color
+                    if not html.startswith("<"):
+                        html = f'<p style="color: #000;">{html}</p>'
+                    elif not re.match(r"<[^>]+color:", html):
+                        html = f'<span style="color: #000;">{html}</span>'
+                    components.append(("BODY", html))
         else:
             # H3 section: heading + all following content in one BODY block
             html_parts: list[str] = []
@@ -341,9 +347,13 @@ def _inline(text: str) -> str:
 
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link_replace, text)
     # Convert **bold** to <strong> (must come before *italic*)
-    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r'<strong style="color: #000;">\1</strong>', text)
     # Convert *italic* to <em>
-    text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", text)
+    text = re.sub(
+        r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)",
+        r'<em style="color: #000;">\1</em>',
+        text,
+    )
     return text
 
 
